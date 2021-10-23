@@ -178,9 +178,11 @@ Based on the previous example, you can also combine multiple rules and make filt
 
 The following table lists the available Comparators for filter rules:
 
-| Comparator | Explanation |
-|------------|-------------|
-| `eq`       | `Equals` comparator, matches only, if the value of the configured `field` in the event is exactly the configured `value`. This comparator is case-sensitive. |
-| `gt`       | `Greater than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is greater than the configured `value`. This comparator never matches when the value is not a numeric field. |
-| `lt`       | `Less than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than the configured `value`. This comparator never matches when the value is not a numeric field. |
-| `contains` | `Contains` comparator, matches only, if the value of the configured `field` in the event is a contains the configured `value`. This is a wildcard matcher, which is equivalent to `*value*` is wildcards would exist. |
+| Comparator   | Explanation |
+|--------------|-------------|
+| `eq`         | `Equals` comparator, matches only, if the value of the configured `field` in the event is exactly the configured `value`. This comparator is case-sensitive. |
+| `gt`         | `Greater than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is greater than the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `lt`         | `Less than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `contains`   | `Contains` comparator, matches only, if the value of the configured `field` in the event is a contains the configured `value`. This is a wildcard matcher, which is equivalent to `*value*` is wildcards would exist. |
+| `startsWith` | `Starts with` comparator, same as `contains` with the only difference, that the field value needs to start with the configured value (`value*` instead of `*value*`). |
+| `endsWith`   | `Ends with` comparator, same as `contains` with the only difference, that the field value needs to end with the configured value (`*value` instead of `*value*`). |

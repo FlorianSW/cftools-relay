@@ -11,6 +11,8 @@ const (
 	ComparatorGreaterThan = "gt"
 	ComparatorLessThan    = "lt"
 	ComparatorContains    = "contains"
+	ComparatorStartsWith  = "startsWith"
+	ComparatorEndsWith    = "endsWith"
 )
 
 type FilterList []Filter
@@ -60,6 +62,14 @@ func (f Filter) Matches(e WebhookEvent) bool {
 			}
 		case ComparatorContains:
 			if !strings.Contains(itos(v), itos(rule.Value)) {
+				return false
+			}
+		case ComparatorStartsWith:
+			if !strings.HasPrefix(itos(v), itos(rule.Value)) {
+				return false
+			}
+		case ComparatorEndsWith:
+			if !strings.HasSuffix(itos(v), itos(rule.Value)) {
 				return false
 			}
 		case ComparatorGreaterThan:

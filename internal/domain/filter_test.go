@@ -172,5 +172,59 @@ var _ = Describe("Filter", func() {
 				Expect(filters.Matches(someEvent)).To(BeFalse())
 			})
 		})
+		Context("startsWith comparator", func() {
+			It("Matches event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Event,
+					Rules: domain.RuleList{{
+						Comparator: "startsWith",
+						Field:      "someKey",
+						Value:      "some",
+					}},
+				}}
+
+				Expect(filters.Matches(someEvent)).To(BeTrue())
+			})
+
+			It("does not match event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Event,
+					Rules: domain.RuleList{{
+						Comparator: "startsWith",
+						Field:      "someKey",
+						Value:      "Value",
+					}},
+				}}
+
+				Expect(filters.Matches(someEvent)).To(BeFalse())
+			})
+		})
+		Context("endsWith comparator", func() {
+			It("Matches event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Event,
+					Rules: domain.RuleList{{
+						Comparator: "endsWith",
+						Field:      "someKey",
+						Value:      "Value",
+					}},
+				}}
+
+				Expect(filters.Matches(someEvent)).To(BeTrue())
+			})
+
+			It("does not match event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Event,
+					Rules: domain.RuleList{{
+						Comparator: "endsWith",
+						Field:      "someKey",
+						Value:      "some",
+					}},
+				}}
+
+				Expect(filters.Matches(someEvent)).To(BeFalse())
+			})
+		})
 	})
 })
