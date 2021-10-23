@@ -1,5 +1,8 @@
 # CFTools Relay
 
+[![Discord](https://img.shields.io/discord/729467994832371813?color=7289da&label=Discord&logo=discord&logoColor=ffffff&style=flat-square)](https://go2tech.de/discord)
+[![Tests](https://img.shields.io/github/workflow/status/FlorianSW/cftools-relay/build?label=tests&style=flat-square)](https://github.com/FlorianSW/cftools-relay/actions/workflows/build.yml)
+
 CFTools Relay is an easy-to-use, still in development, tool that allows you to subscribe to CFTools Cloud Webhook events and forward them to a different target.
 Right now, the only target that is supported is as Discord Webhook URL.
 
