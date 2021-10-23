@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -50,21 +51,22 @@ type Death struct {
 }
 
 type Kill struct {
-	VictimCFToolsId   string `json:"victim_id"`
-	Victim            string `json:"victim"`
-	MurdererCFToolsId string `json:"murderer_id"`
-	Murderer          string `json:"murderer"`
-	Weapon            string `json:"weapon"`
-	Distance          string `json:"distance"`
+	VictimCFToolsId   string  `json:"victim_id"`
+	Victim            string  `json:"victim"`
+	MurdererCFToolsId string  `json:"murderer_id"`
+	Murderer          string  `json:"murderer"`
+	Weapon            string  `json:"weapon"`
+	Distance          float32 `json:"distance"`
 }
 
 type WebhookEvent struct {
-	ShardId   int
-	Flavor    EventFlavor
-	Event     string
-	Id        string
-	Signature string
-	Payload   string
+	ShardId       int
+	Flavor        EventFlavor
+	Event         string
+	Id            string
+	Signature     string
+	Payload       string
+	ParsedPayload map[string]interface{}
 }
 
 func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
@@ -76,13 +78,19 @@ func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
 	if err != nil {
 		return WebhookEvent{}, err
 	}
+	var parsed map[string]interface{}
+	err = json.Unmarshal(p, &parsed)
+	if err != nil {
+		return WebhookEvent{}, err
+	}
 	return WebhookEvent{
-		ShardId:   shardId,
-		Flavor:    r.Header.Get("X-Hephaistos-Flavor"),
-		Event:     r.Header.Get("X-Hephaistos-Event"),
-		Id:        r.Header.Get("X-Hephaistos-Delivery"),
-		Signature: r.Header.Get("X-Hephaistos-Signature"),
-		Payload:   string(p),
+		ShardId:       shardId,
+		Flavor:        r.Header.Get("X-Hephaistos-Flavor"),
+		Event:         r.Header.Get("X-Hephaistos-Event"),
+		Id:            r.Header.Get("X-Hephaistos-Delivery"),
+		Signature:     r.Header.Get("X-Hephaistos-Signature"),
+		Payload:       string(p),
+		ParsedPayload: parsed,
 	}, nil
 }
 
@@ -124,8 +132,8 @@ func (e WebhookEvent) Metadata() (map[string]string, error) {
 			return map[string]string{}, err
 		}
 		return map[string]string{
-			"Name": payload.Name,
-			"Steam ID": strconv.Itoa(payload.Steam64),
+			"Name":       payload.Name,
+			"Steam ID":   strconv.Itoa(payload.Steam64),
 			"CFTools ID": payload.CFToolsId,
 		}, nil
 	case EventUserLeave:
@@ -135,9 +143,9 @@ func (e WebhookEvent) Metadata() (map[string]string, error) {
 			return map[string]string{}, err
 		}
 		return map[string]string{
-			"Name": payload.Name,
+			"Name":       payload.Name,
 			"CFTools ID": payload.CFToolsId,
-			"Playtime": payload.Playtime,
+			"Playtime":   payload.Playtime,
 		}, nil
 	case EventPlayerKill:
 		var payload Kill
@@ -146,12 +154,12 @@ func (e WebhookEvent) Metadata() (map[string]string, error) {
 			return map[string]string{}, err
 		}
 		return map[string]string{
-			"Victim": payload.Victim,
-			"Victim CFTools ID": payload.VictimCFToolsId,
-			"Murderer": payload.Murderer,
+			"Victim":              payload.Victim,
+			"Victim CFTools ID":   payload.VictimCFToolsId,
+			"Murderer":            payload.Murderer,
 			"Murderer CFTools ID": payload.MurdererCFToolsId,
-			"Weapon": payload.Weapon,
-			"Distance in meter": payload.Distance,
+			"Weapon":              payload.Weapon,
+			"Distance in meter":   fmt.Sprint(payload.Distance),
 		}, nil
 	case EventPlayerDeathEnvironment:
 		var payload Death
@@ -160,9 +168,9 @@ func (e WebhookEvent) Metadata() (map[string]string, error) {
 			return map[string]string{}, err
 		}
 		return map[string]string{
-			"Name": payload.Victim,
+			"Name":       payload.Victim,
 			"CFTools ID": payload.CFToolsId,
-			"Position": payload.VictimPosition,
+			"Position":   payload.VictimPosition,
 		}, nil
 	case EventPlayerDeathStarvation:
 		var payload Death
@@ -171,9 +179,9 @@ func (e WebhookEvent) Metadata() (map[string]string, error) {
 			return map[string]string{}, err
 		}
 		return map[string]string{
-			"Name": payload.Victim,
+			"Name":       payload.Victim,
 			"CFTools ID": payload.CFToolsId,
-			"Position": payload.VictimPosition,
+			"Position":   payload.VictimPosition,
 		}, nil
 	default:
 		return map[string]string{}, nil

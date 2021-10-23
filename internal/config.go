@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"cftools-relay/internal/domain"
 	"code.cloudfoundry.org/lager"
 	"encoding/json"
 	"os"
@@ -11,9 +12,10 @@ type Discord struct {
 }
 
 type Config struct {
-	Port    int     `json:"port"`
-	Secret  string  `json:"secret"`
-	Discord Discord `json:"discord"`
+	Port    int               `json:"port"`
+	Secret  string            `json:"secret"`
+	Discord Discord           `json:"discord"`
+	Filter  domain.FilterList `json:"filter"`
 }
 
 func NewConfig(path string, logger lager.Logger) (Config, error) {
@@ -35,6 +37,9 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 		}
 	}
 
+	if config.Filter == nil {
+		config.Filter = domain.FilterList{}
+	}
 	c, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return Config{}, err

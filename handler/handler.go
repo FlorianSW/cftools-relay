@@ -10,13 +10,15 @@ import (
 type webhookHandler struct {
 	target domain.Target
 	secret string
+	filter domain.FilterList
 	logger lager.Logger
 }
 
-func NewWebhookHandler(t domain.Target, s string, logger lager.Logger) *webhookHandler {
+func NewWebhookHandler(t domain.Target, s string, filter domain.FilterList, logger lager.Logger) *webhookHandler {
 	return &webhookHandler{
 		target: t,
 		secret: s,
+		filter: filter,
 		logger: logger,
 	}
 }
@@ -54,8 +56,11 @@ func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
-	if e.IsValidSignature(h.secret) {
+	if !e.IsValidSignature(h.secret) {
+		return errors.New("signature-mismatch")
+	}
+	if h.filter.Matches(e) {
 		return h.target.Relay(e)
 	}
-	return errors.New("signature-mismatch")
+	return nil
 }
