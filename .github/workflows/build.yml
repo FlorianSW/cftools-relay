@@ -15,7 +15,7 @@ jobs:
       - name: Test
         run: go test ./...
       - name: Build
-        run: build.sh
+        run: ./build.sh
       - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
