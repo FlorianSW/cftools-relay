@@ -16,9 +16,13 @@ jobs:
         run: go test ./...
       - name: Build
         run: ./build.sh
-      - name: Archive artifacts
+      - name: Archive linux artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: binaries
-          path: |
-            build
+          name: linux-binary
+          path: build/cftools_relay_linux
+      - name: Archive windows artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-binary
+          path: build/cftools_relay_win64.exe
