@@ -28,8 +28,26 @@ func NewDiscordTarget(webhookUrl string, logger lager.Logger) *discordTarget {
 	}
 }
 
-func (t *discordTarget) Relay(msg string, e domain.WebhookEvent) error {
-	l := t.logger.Session("relay", lager.Data{"message": msg, "event": e})
+func (t *discordTarget) Relay(e domain.WebhookEvent) error {
+	l := t.logger.Session("relay", lager.Data{"event": e})
+	m, err := e.Metadata()
+	if err != nil {
+		return err
+	}
+	fields := []*discordgo.MessageEmbedField{
+		{
+			Name:   "Message",
+			Value:  e.Message(),
+			Inline: false,
+		},
+	}
+	for key, value := range m {
+		fields = append(fields, &discordgo.MessageEmbedField{
+			Name:   key,
+			Value:  value,
+			Inline: true,
+		})
+	}
 	params := discordgo.WebhookParams{
 		Username: "CFTools-Discord-Relay",
 		Embeds: []*discordgo.MessageEmbed{
@@ -42,18 +60,7 @@ func (t *discordTarget) Relay(msg string, e domain.WebhookEvent) error {
 					URL:  "https://github.com",
 					Name: "CFTools Relay",
 				},
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Message",
-						Value:  msg,
-						Inline: false,
-					},
-					{
-						Name:   "Event",
-						Value:  e.Event,
-						Inline: true,
-					},
-				},
+				Fields: fields,
 			},
 		},
 	}

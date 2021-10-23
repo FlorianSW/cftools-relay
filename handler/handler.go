@@ -55,7 +55,7 @@ func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
 	if e.IsValidSignature(h.secret) {
-		return h.target.Relay("Test", e)
+		return h.target.Relay(e)
 	}
 	return errors.New("signature-mismatch")
 }
