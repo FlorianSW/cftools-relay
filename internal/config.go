@@ -11,7 +11,8 @@ type Discord struct {
 }
 
 type Config struct {
-	Port int `json:"port"`
+	Port    int     `json:"port"`
+	Secret  string  `json:"secret"`
 	Discord Discord `json:"discord"`
 }
 

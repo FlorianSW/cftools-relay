@@ -19,7 +19,8 @@ func main() {
 		logger.Fatal("config", err)
 	}
 
-	h := handler.NewWebhookHandler(adapter.NewDiscordTarget(c.Discord.WebhookUrl, logger), logger)
+	target := adapter.NewDiscordTarget(c.Discord.WebhookUrl, logger)
+	h := handler.NewWebhookHandler(target, c.Secret, logger)
 
 	logger.Info("start-listener", lager.Data{"port": c.Port})
 	err = http.ListenAndServe(":"+strconv.Itoa(c.Port), h)

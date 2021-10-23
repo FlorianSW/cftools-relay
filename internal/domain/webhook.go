@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -41,4 +43,16 @@ func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
 		Signature: r.Header.Get("X-Hephaistos-Signature"),
 		Payload:   string(p),
 	}, nil
+}
+
+func (e WebhookEvent) IsValidSignature(secret string) bool {
+	if e.Event == EventVerification {
+		return true
+	}
+	a := sha256.New()
+	a.Write([]byte(e.Id))
+	a.Write([]byte(secret))
+	r := a.Sum(nil)
+
+	return hex.EncodeToString(r) == e.Signature
 }

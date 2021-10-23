@@ -3,17 +3,20 @@ package handler
 import (
 	"cftools-relay/internal/domain"
 	"code.cloudfoundry.org/lager"
+	"errors"
 	"net/http"
 )
 
 type webhookHandler struct {
 	target domain.Target
+	secret string
 	logger lager.Logger
 }
 
-func NewWebhookHandler(t domain.Target, logger lager.Logger) *webhookHandler {
+func NewWebhookHandler(t domain.Target, s string, logger lager.Logger) *webhookHandler {
 	return &webhookHandler{
 		target: t,
+		secret: s,
 		logger: logger,
 	}
 }
@@ -51,5 +54,8 @@ func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
-	return h.target.Relay("Test", e)
+	if e.IsValidSignature(h.secret) {
+		return h.target.Relay("Test", e)
+	}
+	return errors.New("signature-mismatch")
 }
