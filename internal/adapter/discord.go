@@ -41,10 +41,10 @@ func (t *discordTarget) Relay(e domain.WebhookEvent) error {
 			Inline: false,
 		},
 	}
-	for key, value := range m {
+	for _, data := range m {
 		fields = append(fields, &discordgo.MessageEmbedField{
-			Name:   key,
-			Value:  value,
+			Name:   data.K,
+			Value:  data.V,
 			Inline: true,
 		})
 	}

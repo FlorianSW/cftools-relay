@@ -69,6 +69,12 @@ type WebhookEvent struct {
 	ParsedPayload map[string]interface{}
 }
 
+type Metadata []Data
+
+type Data struct {
+	K, V string
+}
+
 func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
 	p, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -123,67 +129,67 @@ func (e WebhookEvent) Message() string {
 	}
 }
 
-func (e WebhookEvent) Metadata() (map[string]string, error) {
+func (e WebhookEvent) Metadata() (Metadata, error) {
 	switch e.Event {
 	case EventUserJoin:
 		var payload UserJoin
 		err := json.Unmarshal([]byte(e.Payload), &payload)
 		if err != nil {
-			return map[string]string{}, err
+			return Metadata{}, err
 		}
-		return map[string]string{
-			"Name":       payload.Name,
-			"Steam ID":   strconv.Itoa(payload.Steam64),
-			"CFTools ID": payload.CFToolsId,
+		return Metadata{
+			{K: "Name", V: payload.Name},
+			{K: "Steam ID", V: strconv.Itoa(payload.Steam64)},
+			{K: "CFTools ID", V: payload.CFToolsId},
 		}, nil
 	case EventUserLeave:
 		var payload UserLeave
 		err := json.Unmarshal([]byte(e.Payload), &payload)
 		if err != nil {
-			return map[string]string{}, err
+			return Metadata{}, err
 		}
-		return map[string]string{
-			"Name":       payload.Name,
-			"CFTools ID": payload.CFToolsId,
-			"Playtime":   payload.Playtime,
+		return Metadata{
+			{K: "Name", V: payload.Name},
+			{K: "CFTools ID", V: payload.CFToolsId},
+			{K: "Playtime", V: payload.Playtime},
 		}, nil
 	case EventPlayerKill:
 		var payload Kill
 		err := json.Unmarshal([]byte(e.Payload), &payload)
 		if err != nil {
-			return map[string]string{}, err
+			return Metadata{}, err
 		}
-		return map[string]string{
-			"Victim":              payload.Victim,
-			"Victim CFTools ID":   payload.VictimCFToolsId,
-			"Murderer":            payload.Murderer,
-			"Murderer CFTools ID": payload.MurdererCFToolsId,
-			"Weapon":              payload.Weapon,
-			"Distance in meter":   fmt.Sprint(payload.Distance),
+		return Metadata{
+			{K: "Victim", V: payload.Victim},
+			{K: "Victim CFTools ID", V: payload.VictimCFToolsId},
+			{K: "Murderer", V: payload.Murderer},
+			{K: "Murderer CFTools ID", V: payload.MurdererCFToolsId},
+			{K: "Weapon", V: payload.Weapon},
+			{K: "Distance in meter", V: fmt.Sprint(payload.Distance)},
 		}, nil
 	case EventPlayerDeathEnvironment:
 		var payload Death
 		err := json.Unmarshal([]byte(e.Payload), &payload)
 		if err != nil {
-			return map[string]string{}, err
+			return Metadata{}, err
 		}
-		return map[string]string{
-			"Name":       payload.Victim,
-			"CFTools ID": payload.CFToolsId,
-			"Position":   payload.VictimPosition,
+		return Metadata{
+			{K: "Name", V: payload.Victim},
+			{K: "CFTools ID", V: payload.CFToolsId},
+			{K: "Position", V: payload.VictimPosition},
 		}, nil
 	case EventPlayerDeathStarvation:
 		var payload Death
 		err := json.Unmarshal([]byte(e.Payload), &payload)
 		if err != nil {
-			return map[string]string{}, err
+			return Metadata{}, err
 		}
-		return map[string]string{
-			"Name":       payload.Victim,
-			"CFTools ID": payload.CFToolsId,
-			"Position":   payload.VictimPosition,
+		return Metadata{
+			{K: "Name", V: payload.Victim},
+			{K: "CFTools ID", V: payload.CFToolsId},
+			{K: "Position", V: payload.VictimPosition},
 		}, nil
 	default:
-		return map[string]string{}, nil
+		return Metadata{}, nil
 	}
 }
