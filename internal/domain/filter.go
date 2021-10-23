@@ -1,13 +1,16 @@
 package domain
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 const (
 	ComparatorEquals      = "eq"
 	ComparatorGreaterThan = "gt"
 	ComparatorLessThan    = "lt"
+	ComparatorContains    = "contains"
 )
 
 type FilterList []Filter
@@ -55,6 +58,10 @@ func (f Filter) Matches(e WebhookEvent) bool {
 			if v != rule.Value {
 				return false
 			}
+		case ComparatorContains:
+			if !strings.Contains(itos(v), itos(rule.Value)) {
+				return false
+			}
 		case ComparatorGreaterThan:
 			if itof(v) < itof(rule.Value) {
 				return false
@@ -68,6 +75,19 @@ func (f Filter) Matches(e WebhookEvent) bool {
 		}
 	}
 	return true
+}
+
+func itos(v interface{}) string {
+	switch value := v.(type) {
+	case float32:
+	case float64:
+		return fmt.Sprintf("%f", value)
+	case int:
+		return strconv.Itoa(value)
+	case string:
+		return value
+	}
+	return ""
 }
 
 func itof(v interface{}) float32 {

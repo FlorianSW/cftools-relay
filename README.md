@@ -182,4 +182,5 @@ The following table lists the available Comparators for filter rules:
 |------------|-------------|
 | `eq`       | `Equals` comparator, matches only, if the value of the configured `field` in the event is exactly the configured `value`. This comparator is case-sensitive. |
 | `gt`       | `Greater than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is greater than the configured `value`. This comparator never matches when the value is not a numeric field. |
-| `lt`        | `Less than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `lt`       | `Less than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `contains` | `Contains` comparator, matches only, if the value of the configured `field` in the event is a contains the configured `value`. This is a wildcard matcher, which is equivalent to `*value*` is wildcards would exist. |
