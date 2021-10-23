@@ -1,8 +1,7 @@
 package domain
 
 import (
-	"fmt"
-	"strconv"
+	"cftools-relay/internal/stringutil"
 	"strings"
 )
 
@@ -61,23 +60,23 @@ func (f Filter) Matches(e WebhookEvent) bool {
 				return false
 			}
 		case ComparatorContains:
-			if !strings.Contains(itos(v), itos(rule.Value)) {
+			if !strings.Contains(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
 				return false
 			}
 		case ComparatorStartsWith:
-			if !strings.HasPrefix(itos(v), itos(rule.Value)) {
+			if !strings.HasPrefix(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
 				return false
 			}
 		case ComparatorEndsWith:
-			if !strings.HasSuffix(itos(v), itos(rule.Value)) {
+			if !strings.HasSuffix(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
 				return false
 			}
 		case ComparatorGreaterThan:
-			if itof(v) < itof(rule.Value) {
+			if stringutil.Itof(v) < stringutil.Itof(rule.Value) {
 				return false
 			}
 		case ComparatorLessThan:
-			if itof(v) > itof(rule.Value) {
+			if stringutil.Itof(v) > stringutil.Itof(rule.Value) {
 				return false
 			}
 		default:
@@ -85,34 +84,4 @@ func (f Filter) Matches(e WebhookEvent) bool {
 		}
 	}
 	return true
-}
-
-func itos(v interface{}) string {
-	switch value := v.(type) {
-	case float32:
-	case float64:
-		return fmt.Sprintf("%f", value)
-	case int:
-		return strconv.Itoa(value)
-	case string:
-		return value
-	}
-	return ""
-}
-
-func itof(v interface{}) float32 {
-	switch value := v.(type) {
-	case float32:
-		return value
-	case int:
-	case float64:
-		return float32(value)
-	case string:
-		r, err := strconv.ParseFloat(value, 32)
-		if err != nil {
-			return -1
-		}
-		return float32(r)
-	}
-	return -1
 }

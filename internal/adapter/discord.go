@@ -30,10 +30,6 @@ func NewDiscordTarget(webhookUrl string, logger lager.Logger) *discordTarget {
 
 func (t *discordTarget) Relay(e domain.WebhookEvent) error {
 	l := t.logger.Session("relay", lager.Data{"event": e})
-	m, err := e.Metadata()
-	if err != nil {
-		return err
-	}
 	fields := []*discordgo.MessageEmbedField{
 		{
 			Name:   "Message",
@@ -41,7 +37,7 @@ func (t *discordTarget) Relay(e domain.WebhookEvent) error {
 			Inline: false,
 		},
 	}
-	for _, data := range m {
+	for _, data := range e.Metadata() {
 		fields = append(fields, &discordgo.MessageEmbedField{
 			Name:   data.K,
 			Value:  data.V,

@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"bytes"
+	"cftools-relay/internal/stringutil"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -25,51 +27,6 @@ const (
 )
 
 type EventFlavor = string
-
-type UserJoin struct {
-	CFToolsId   string `json:"cftools_id"`
-	Name        string `json:"player_name"`
-	IP          string `json:"player_ipv4"`
-	BEGUID      string `json:"player_guid"`
-	Steam64     int    `json:"player_steam64"`
-	Country     string `json:"player_country"`
-	CountryCode string `json:"player_country_code"`
-	Vpn         string `json:"player_vpn"`
-}
-
-type UserLeave struct {
-	CFToolsId string `json:"cftools_id"`
-	Name      string `json:"player_name"`
-	IP        string `json:"player_ipv4"`
-	BEGUID    string `json:"player_guid"`
-	Playtime  string `json:"player_playtime"`
-}
-
-type Death struct {
-	CFToolsId      string `json:"victim_id"`
-	Victim         string `json:"victim"`
-	VictimPosition string `json:"victim_position"`
-}
-
-type Kill struct {
-	VictimCFToolsId   string  `json:"victim_id"`
-	Victim            string  `json:"victim"`
-	MurdererCFToolsId string  `json:"murderer_id"`
-	Murderer          string  `json:"murderer"`
-	Weapon            string  `json:"weapon"`
-	Distance          float32 `json:"distance"`
-}
-
-type Damage struct {
-	VictimCFToolsId   string  `json:"victim_id"`
-	Victim            string  `json:"victim"`
-	MurdererCFToolsId string  `json:"murderer_id"`
-	Murderer          string  `json:"murderer"`
-	Weapon            string  `json:"weapon"`
-	Zone              string  `json:"zone"`
-	Distance          float32 `json:"distance"`
-	Damage            float32 `json:"damage"`
-}
 
 type WebhookEvent struct {
 	ShardId       int
@@ -97,7 +54,9 @@ func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
 		return WebhookEvent{}, err
 	}
 	var parsed map[string]interface{}
-	err = json.Unmarshal(p, &parsed)
+	d := json.NewDecoder(bytes.NewReader(p))
+	d.UseNumber()
+	err = d.Decode(&parsed)
 	if err != nil {
 		return WebhookEvent{}, err
 	}
@@ -138,88 +97,93 @@ func (e WebhookEvent) Message() string {
 		return "Player died from starvation."
 	case EventPlayerDamage:
 		return "Player injured another player."
+	case EventPlayerPlace:
+		return "Player played an item."
 	default:
-		return "Unknown event"
+		return fmt.Sprintf("Event: %s", e.Event)
 	}
 }
 
-func (e WebhookEvent) Metadata() (Metadata, error) {
-	switch e.Event {
-	case EventUserJoin:
-		var payload UserJoin
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Name", V: payload.Name},
-			{K: "Steam ID", V: strconv.Itoa(payload.Steam64)},
-			{K: "CFTools ID", V: payload.CFToolsId},
-		}, nil
-	case EventUserLeave:
-		var payload UserLeave
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Name", V: payload.Name},
-			{K: "CFTools ID", V: payload.CFToolsId},
-			{K: "Playtime", V: payload.Playtime},
-		}, nil
-	case EventPlayerKill:
-		var payload Kill
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Victim", V: payload.Victim},
-			{K: "Victim CFTools ID", V: payload.VictimCFToolsId},
-			{K: "Murderer", V: payload.Murderer},
-			{K: "Murderer CFTools ID", V: payload.MurdererCFToolsId},
-			{K: "Weapon", V: payload.Weapon},
-			{K: "Distance in meter", V: fmt.Sprint(payload.Distance)},
-		}, nil
-	case EventPlayerDamage:
-		var payload Damage
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Victim", V: payload.Victim},
-			{K: "Victim CFTools ID", V: payload.VictimCFToolsId},
-			{K: "Murderer", V: payload.Murderer},
-			{K: "Murderer CFTools ID", V: payload.MurdererCFToolsId},
-			{K: "Weapon", V: payload.Weapon},
-			{K: "Zone", V: payload.Zone},
-			{K: "Damage points", V: fmt.Sprint(payload.Damage)},
-			{K: "Distance in meter", V: fmt.Sprint(payload.Distance)},
-		}, nil
-	case EventPlayerDeathEnvironment:
-		var payload Death
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Name", V: payload.Victim},
-			{K: "CFTools ID", V: payload.CFToolsId},
-			{K: "Position", V: payload.VictimPosition},
-		}, nil
-	case EventPlayerDeathStarvation:
-		var payload Death
-		err := json.Unmarshal([]byte(e.Payload), &payload)
-		if err != nil {
-			return Metadata{}, err
-		}
-		return Metadata{
-			{K: "Name", V: payload.Victim},
-			{K: "CFTools ID", V: payload.CFToolsId},
-			{K: "Position", V: payload.VictimPosition},
-		}, nil
-	default:
-		return Metadata{}, nil
+func (e WebhookEvent) Metadata() Metadata {
+	var m Metadata
+
+	if v, ok := e.ParsedPayload["player_name"]; ok {
+		m = append(m, Data{
+			K: "Name",
+			V: stringutil.Itos(v),
+		})
 	}
+	if v, ok := e.ParsedPayload["player_steam64"]; ok {
+		m = append(m, Data{
+			K: "Steam ID",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["cftools_id"]; ok {
+		m = append(m, Data{
+			K: "CFTools ID",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["player_playtime"]; ok {
+		m = append(m, Data{
+			K: "CFTools ID",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["victim"]; ok {
+		m = append(m, Data{
+			K: "Victim",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["victim_position"]; ok {
+		m = append(m, Data{
+			K: "Victim Potision",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["victim_id"]; ok {
+		m = append(m, Data{
+			K: "Victim CFTools ID",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["murderer"]; ok {
+		m = append(m, Data{
+			K: "Murderer",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["murderer_id"]; ok {
+		m = append(m, Data{
+			K: "Murderer CFTools ID",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["weapon"]; ok {
+		m = append(m, Data{
+			K: "Weapon",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["damage"]; ok {
+		m = append(m, Data{
+			K: "Damage points",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["distance"]; ok {
+		m = append(m, Data{
+			K: "Distance in meter",
+			V: stringutil.Itos(v),
+		})
+	}
+	if v, ok := e.ParsedPayload["item"]; ok {
+		m = append(m, Data{
+			K: "Item",
+			V: stringutil.Itos(v),
+		})
+	}
+	return m
 }
