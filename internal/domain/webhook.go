@@ -21,6 +21,7 @@ const (
 	EventPlayerDeathStarvation  = "player.death_starvation"
 	EventPlayerDeathEnvironment = "player.death_environment"
 	EventPlayerKill             = "player.kill"
+	EventPlayerDamage           = "player.damage"
 )
 
 type EventFlavor = string
@@ -57,6 +58,17 @@ type Kill struct {
 	Murderer          string  `json:"murderer"`
 	Weapon            string  `json:"weapon"`
 	Distance          float32 `json:"distance"`
+}
+
+type Damage struct {
+	VictimCFToolsId   string  `json:"victim_id"`
+	Victim            string  `json:"victim"`
+	MurdererCFToolsId string  `json:"murderer_id"`
+	Murderer          string  `json:"murderer"`
+	Weapon            string  `json:"weapon"`
+	Zone              string  `json:"zone"`
+	Distance          float32 `json:"distance"`
+	Damage            float32 `json:"damage"`
 }
 
 type WebhookEvent struct {
@@ -124,6 +136,8 @@ func (e WebhookEvent) Message() string {
 		return "Player was killed by the environment."
 	case EventPlayerDeathStarvation:
 		return "Player died from starvation."
+	case EventPlayerDamage:
+		return "Player injured another player."
 	default:
 		return "Unknown event"
 	}
@@ -165,6 +179,22 @@ func (e WebhookEvent) Metadata() (Metadata, error) {
 			{K: "Murderer", V: payload.Murderer},
 			{K: "Murderer CFTools ID", V: payload.MurdererCFToolsId},
 			{K: "Weapon", V: payload.Weapon},
+			{K: "Distance in meter", V: fmt.Sprint(payload.Distance)},
+		}, nil
+	case EventPlayerDamage:
+		var payload Damage
+		err := json.Unmarshal([]byte(e.Payload), &payload)
+		if err != nil {
+			return Metadata{}, err
+		}
+		return Metadata{
+			{K: "Victim", V: payload.Victim},
+			{K: "Victim CFTools ID", V: payload.VictimCFToolsId},
+			{K: "Murderer", V: payload.Murderer},
+			{K: "Murderer CFTools ID", V: payload.MurdererCFToolsId},
+			{K: "Weapon", V: payload.Weapon},
+			{K: "Zone", V: payload.Zone},
+			{K: "Damage points", V: fmt.Sprint(payload.Damage)},
 			{K: "Distance in meter", V: fmt.Sprint(payload.Distance)},
 		}, nil
 	case EventPlayerDeathEnvironment:
