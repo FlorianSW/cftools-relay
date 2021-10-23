@@ -26,6 +26,22 @@ const (
 	EventPlayerDamage           = "player.damage"
 )
 
+var possibleMetadata = map[string]string{
+	"player_name":     "Name",
+	"player_steam64":  "Steam ID",
+	"cftools_id":      "CFTools ID",
+	"player_playtime": "Playtime",
+	"victim":          "Victim",
+	"victim_position": "Victim Position",
+	"victim_id":       "Victim CFTools ID",
+	"murderer":        "Murderer",
+	"murderer_id":     "Murderer CFTools ID",
+	"weapon":          "Weapon",
+	"damage":          "Damage points",
+	"distance":        "Distance in meter",
+	"item":            "Item",
+}
+
 type EventFlavor = string
 
 type WebhookEvent struct {
@@ -107,83 +123,13 @@ func (e WebhookEvent) Message() string {
 func (e WebhookEvent) Metadata() Metadata {
 	var m Metadata
 
-	if v, ok := e.ParsedPayload["player_name"]; ok {
-		m = append(m, Data{
-			K: "Name",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["player_steam64"]; ok {
-		m = append(m, Data{
-			K: "Steam ID",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["cftools_id"]; ok {
-		m = append(m, Data{
-			K: "CFTools ID",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["player_playtime"]; ok {
-		m = append(m, Data{
-			K: "CFTools ID",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["victim"]; ok {
-		m = append(m, Data{
-			K: "Victim",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["victim_position"]; ok {
-		m = append(m, Data{
-			K: "Victim Potision",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["victim_id"]; ok {
-		m = append(m, Data{
-			K: "Victim CFTools ID",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["murderer"]; ok {
-		m = append(m, Data{
-			K: "Murderer",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["murderer_id"]; ok {
-		m = append(m, Data{
-			K: "Murderer CFTools ID",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["weapon"]; ok {
-		m = append(m, Data{
-			K: "Weapon",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["damage"]; ok {
-		m = append(m, Data{
-			K: "Damage points",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["distance"]; ok {
-		m = append(m, Data{
-			K: "Distance in meter",
-			V: stringutil.Itos(v),
-		})
-	}
-	if v, ok := e.ParsedPayload["item"]; ok {
-		m = append(m, Data{
-			K: "Item",
-			V: stringutil.Itos(v),
-		})
+	for key, label := range possibleMetadata {
+		if v, ok := e.ParsedPayload[key]; ok {
+			m = append(m, Data{
+				K: label,
+				V: stringutil.Itos(v),
+			})
+		}
 	}
 	return m
 }
