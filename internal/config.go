@@ -19,6 +19,19 @@ type Config struct {
 }
 
 func NewConfig(path string, logger lager.Logger) (Config, error) {
+	config, err := readConfig(path, logger)
+	if err != nil {
+		return config, err
+	}
+
+	if config.Filter == nil {
+		config.Filter = domain.FilterList{}
+	}
+
+	return config, persistConfig(path, config)
+}
+
+func readConfig(path string, logger lager.Logger) (Config, error) {
 	var config Config
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		logger.Info("create-config")
@@ -36,17 +49,13 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 			return Config{}, err
 		}
 	}
+	return config, nil
+}
 
-	if config.Filter == nil {
-		config.Filter = domain.FilterList{}
-	}
+func persistConfig(path string, config Config) error {
 	c, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
-		return Config{}, err
+		return err
 	}
-	err = os.WriteFile(path, c, 0655)
-	if err != nil {
-		return Config{}, err
-	}
-	return config, nil
+	return os.WriteFile(path, c, 0655)
 }
