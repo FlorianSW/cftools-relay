@@ -21,20 +21,26 @@ func Itos(v interface{}) string {
 	return ""
 }
 
-func Itof(v interface{}) float32 {
+func Itof(v interface{}) float64 {
 	switch value := v.(type) {
-	case float32:
+	case float64:
 		return value
 	case int:
-		return float32(value)
-	case float64:
-		return float32(value)
+		return float64(value)
+	case float32:
+		return float64(value)
 	case string:
 		r, err := strconv.ParseFloat(value, 32)
 		if err != nil {
 			return -1
 		}
-		return float32(r)
+		return r
+	case json.Number:
+		r, err := value.Float64()
+		if err != nil {
+			return -1
+		}
+		return r
 	}
 	return -1
 }

@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"cftools-relay/internal/domain"
+	"encoding/json"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"time"
@@ -96,7 +97,7 @@ var _ = Describe("Filter", func() {
 			})
 		})
 		Context("GT comparator", func() {
-			It("Matches event", func() {
+			It("Matches float event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -107,6 +108,19 @@ var _ = Describe("Filter", func() {
 				}}
 
 				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+			})
+
+			It("does not match event (JSON Number)", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "gt",
+						Field:      "numberKey",
+						Value:      json.Number("100.13"),
+					}},
+				}}
+
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 
 			It("does not match event", func() {
