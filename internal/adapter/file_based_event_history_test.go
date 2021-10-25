@@ -13,7 +13,7 @@ var _ = Describe("EventHistory", func() {
 	var r domain.EventHistory
 
 	BeforeEach(func() {
-		err := os.Mkdir("./test-data", 0665)
+		err := os.Mkdir("./test-data", 0645)
 		if err != nil {
 			panic(err)
 		}

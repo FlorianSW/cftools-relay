@@ -15,7 +15,7 @@ type repository struct {
 
 func NewEventRepository(dataDir string) (*repository, error) {
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		if err := os.Mkdir(dataDir, 0655); err != nil {
+		if err := os.Mkdir(dataDir, 0644); err != nil {
 			return nil, err
 		}
 	}
@@ -77,7 +77,7 @@ func ensureFile(path string) (string, error) {
 		if err != nil {
 			return path, err
 		}
-		err = os.WriteFile(path, c, 0655)
+		err = os.WriteFile(path, c, 0644)
 		if err != nil {
 			return path, err
 		}
