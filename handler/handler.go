@@ -43,7 +43,7 @@ func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		l.Info("event", lager.Data{"event": e})
-		if e.Event != domain.EventVerification {
+		if e.Event.Type != domain.EventVerification {
 			err = h.onEvent(e)
 			if err != nil {
 				l.Error("handle-event", err)
@@ -59,8 +59,8 @@ func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
 	if !e.IsValidSignature(h.secret) {
 		return errors.New("signature-mismatch")
 	}
-	if h.filter.Matches(e) {
-		return h.target.Relay(e)
+	if h.filter.Matches(e.Event) {
+		return h.target.Relay(e.Event)
 	}
 	return nil
 }

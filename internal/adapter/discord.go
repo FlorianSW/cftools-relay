@@ -28,7 +28,7 @@ func NewDiscordTarget(webhookUrl string, logger lager.Logger) *discordTarget {
 	}
 }
 
-func (t *discordTarget) Relay(e domain.WebhookEvent) error {
+func (t *discordTarget) Relay(e domain.Event) error {
 	l := t.logger.Session("relay", lager.Data{"event": e})
 	fields := []*discordgo.MessageEmbedField{
 		{

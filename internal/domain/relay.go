@@ -1,5 +1,5 @@
 package domain
 
 type Target interface {
-	Relay(e WebhookEvent) error
+	Relay(e Event) error
 }

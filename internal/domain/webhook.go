@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 const (
@@ -24,34 +25,43 @@ const (
 	EventPlayerDeathEnvironment = "player.death_environment"
 	EventPlayerKill             = "player.kill"
 	EventPlayerDamage           = "player.damage"
+
+	FieldCfToolsId         = "cftools_id"
+	FieldVictimCfToolsId   = "victim_id"
+	FieldMurdererCfToolsId = "murderer_id"
 )
 
 var possibleMetadata = map[string]string{
-	"player_name":     "Name",
-	"player_steam64":  "Steam ID",
-	"cftools_id":      "CFTools ID",
-	"player_playtime": "Playtime",
-	"victim":          "Victim",
-	"victim_position": "Victim Position",
-	"victim_id":       "Victim CFTools ID",
-	"murderer":        "Murderer",
-	"murderer_id":     "Murderer CFTools ID",
-	"weapon":          "Weapon",
-	"damage":          "Damage points",
-	"distance":        "Distance in meter",
-	"item":            "Item",
+	"player_name":          "Name",
+	"player_steam64":       "Steam ID",
+	FieldCfToolsId:         "CFTools ID",
+	"player_playtime":      "Playtime",
+	"victim":               "Victim",
+	"victim_position":      "Victim Position",
+	FieldVictimCfToolsId:   "Victim CFTools ID",
+	"murderer":             "Murderer",
+	FieldMurdererCfToolsId: "Murderer CFTools ID",
+	"weapon":               "Weapon",
+	"damage":               "Damage points",
+	"distance":             "Distance in meter",
+	"item":                 "Item",
 }
 
 type EventFlavor = string
 
 type WebhookEvent struct {
-	ShardId       int
-	Flavor        EventFlavor
-	Event         string
-	Id            string
-	Signature     string
-	Payload       string
-	ParsedPayload map[string]interface{}
+	ShardId   int
+	Flavor    EventFlavor
+	Id        string
+	Signature string
+	Payload   string
+	Event     Event
+}
+
+type Event struct {
+	Type      string
+	Timestamp time.Time
+	Values    map[string]interface{}
 }
 
 type Metadata []Data
@@ -77,18 +87,21 @@ func WebhookFromRequest(r *http.Request) (WebhookEvent, error) {
 		return WebhookEvent{}, err
 	}
 	return WebhookEvent{
-		ShardId:       shardId,
-		Flavor:        r.Header.Get("X-Hephaistos-Flavor"),
-		Event:         r.Header.Get("X-Hephaistos-Event"),
-		Id:            r.Header.Get("X-Hephaistos-Delivery"),
-		Signature:     r.Header.Get("X-Hephaistos-Signature"),
-		Payload:       string(p),
-		ParsedPayload: parsed,
+		ShardId:   shardId,
+		Flavor:    r.Header.Get("X-Hephaistos-Flavor"),
+		Id:        r.Header.Get("X-Hephaistos-Delivery"),
+		Signature: r.Header.Get("X-Hephaistos-Signature"),
+		Payload:   string(p),
+		Event: Event{
+			Type:      r.Header.Get("X-Hephaistos-Event"),
+			Timestamp: time.Now(),
+			Values:    parsed,
+		},
 	}, nil
 }
 
 func (e WebhookEvent) IsValidSignature(secret string) bool {
-	if e.Event == EventVerification {
+	if e.Event.Type == EventVerification {
 		return true
 	}
 	a := sha256.New()
@@ -99,8 +112,8 @@ func (e WebhookEvent) IsValidSignature(secret string) bool {
 	return hex.EncodeToString(r) == e.Signature
 }
 
-func (e WebhookEvent) Message() string {
-	switch e.Event {
+func (e Event) Message() string {
+	switch e.Type {
 	case EventUserJoin:
 		return "Player connected."
 	case EventUserLeave:
@@ -116,15 +129,15 @@ func (e WebhookEvent) Message() string {
 	case EventPlayerPlace:
 		return "Player played an item."
 	default:
-		return fmt.Sprintf("Event: %s", e.Event)
+		return fmt.Sprintf("Event: %s", e.Type)
 	}
 }
 
-func (e WebhookEvent) Metadata() Metadata {
+func (e Event) Metadata() Metadata {
 	var m Metadata
 
 	for key, label := range possibleMetadata {
-		if v, ok := e.ParsedPayload[key]; ok {
+		if v, ok := e.Values[key]; ok {
 			m = append(m, Data{
 				K: label,
 				V: stringutil.Itos(v),
@@ -132,4 +145,16 @@ func (e WebhookEvent) Metadata() Metadata {
 		}
 	}
 	return m
+}
+
+func (e Event) CFToolsId() *string {
+	possibleId, ok := e.Values[FieldCfToolsId]
+	if id, isString := possibleId.(string); ok && isString {
+		return &id
+	}
+	possibleId, ok = e.Values[FieldMurdererCfToolsId]
+	if id, isString := possibleId.(string); ok && isString {
+		return &id
+	}
+	return nil
 }

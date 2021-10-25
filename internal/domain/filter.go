@@ -16,7 +16,7 @@ const (
 
 type FilterList []Filter
 
-func (l FilterList) Matches(e WebhookEvent) bool {
+func (l FilterList) Matches(e Event) bool {
 	if len(l) == 0 {
 		return true
 	}
@@ -42,15 +42,15 @@ type Rule struct {
 	Value      interface{} `json:"value"`
 }
 
-func (f Filter) Matches(e WebhookEvent) bool {
-	if e.Event != f.Event {
+func (f Filter) Matches(e Event) bool {
+	if e.Type != f.Event {
 		return false
 	}
 	if len(f.Rules) == 0 {
 		return true
 	}
 	for _, rule := range f.Rules {
-		v, ok := e.ParsedPayload[rule.Field]
+		v, ok := e.Values[rule.Field]
 		if !ok {
 			return false
 		}

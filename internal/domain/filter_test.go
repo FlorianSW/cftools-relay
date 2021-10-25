@@ -4,18 +4,15 @@ import (
 	"cftools-relay/internal/domain"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("Filter", func() {
-	someEvent := domain.WebhookEvent{
-		ShardId:   0,
-		Flavor:    domain.FlavorCftools,
-		Event:     domain.EventPlayerKill,
-		Id:        "2b00830c-bbda-4387-8d8e-917dc5591177",
-		Signature: "SOME_SIGNATURE",
-		Payload:   "{\"someKey\": \"someValue\"}",
-		ParsedPayload: map[string]interface{}{
-			"someKey": "someValue",
+	someEvent := domain.Event{
+		Type:      domain.EventPlayerKill,
+		Timestamp: time.Now(),
+		Values: map[string]interface{}{
+			"someKey":   "someValue",
 			"numberKey": 100.12,
 		},
 	}
@@ -29,7 +26,7 @@ var _ = Describe("Filter", func() {
 	Context("Event filter", func() {
 		It("Matches event", func() {
 			filters := domain.FilterList{{
-				Event: someEvent.Event,
+				Event: someEvent.Type,
 				Rules: nil,
 			}}
 
@@ -50,7 +47,7 @@ var _ = Describe("Filter", func() {
 		Context("EQ comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "eq",
 						Field:      "someKey",
@@ -63,7 +60,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "eq",
 						Field:      "someKey",
@@ -76,7 +73,7 @@ var _ = Describe("Filter", func() {
 
 			It("all rules must match to match", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "eq",
 						Field:      "someKey",
@@ -94,7 +91,7 @@ var _ = Describe("Filter", func() {
 		Context("GT comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "gt",
 						Field:      "numberKey",
@@ -107,7 +104,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "gt",
 						Field:      "numberKey",
@@ -121,7 +118,7 @@ var _ = Describe("Filter", func() {
 		Context("LT comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "lt",
 						Field:      "numberKey",
@@ -134,7 +131,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "lt",
 						Field:      "numberKey",
@@ -148,7 +145,7 @@ var _ = Describe("Filter", func() {
 		Context("contains comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "contains",
 						Field:      "someKey",
@@ -161,7 +158,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "contains",
 						Field:      "someKey",
@@ -175,7 +172,7 @@ var _ = Describe("Filter", func() {
 		Context("startsWith comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "startsWith",
 						Field:      "someKey",
@@ -188,7 +185,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "startsWith",
 						Field:      "someKey",
@@ -202,7 +199,7 @@ var _ = Describe("Filter", func() {
 		Context("endsWith comparator", func() {
 			It("Matches event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "endsWith",
 						Field:      "someKey",
@@ -215,7 +212,7 @@ var _ = Describe("Filter", func() {
 
 			It("does not match event", func() {
 				filters := domain.FilterList{{
-					Event: someEvent.Event,
+					Event: someEvent.Type,
 					Rules: domain.RuleList{{
 						Comparator: "endsWith",
 						Field:      "someKey",
