@@ -10,14 +10,18 @@ import (
 )
 
 var _ = Describe("EventHistory", func() {
-	var r domain.EventHistory
+	var (
+		tmpPath string
+		r domain.EventHistory
+	)
 
 	BeforeEach(func() {
-		err := os.Mkdir("./test-data", 0645)
+		path, err := os.MkdirTemp("", "test-data")
 		if err != nil {
 			panic(err)
 		}
-		repo, err := adapter.NewEventRepository("./test-data")
+		tmpPath = path
+		repo, err := adapter.NewEventRepository(path)
 		if err != nil {
 			panic(err)
 		}
@@ -25,7 +29,7 @@ var _ = Describe("EventHistory", func() {
 	})
 
 	AfterEach(func() {
-		err := os.RemoveAll("./test-data")
+		err := os.RemoveAll(tmpPath)
 		if err != nil {
 			panic(err)
 		}
