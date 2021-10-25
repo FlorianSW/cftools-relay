@@ -99,7 +99,7 @@ func (f Filter) Matches(h EventHistory, e Event) (bool, error) {
 }
 
 func populateVirtualField(h EventHistory, e Event, rule Rule) error {
-	if rule.Field == VirtualFieldEventCount {
+	if _, ok := e.Values[VirtualFieldEventCount]; rule.Field == VirtualFieldEventCount && !ok {
 		var d time.Duration
 		if rule.Since != "" {
 			parsed, err := time.ParseDuration(rule.Since)

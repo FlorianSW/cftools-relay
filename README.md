@@ -184,8 +184,74 @@ The following table lists the available Comparators for filter rules:
 | Comparator   | Explanation |
 |--------------|-------------|
 | `eq`         | `Equals` comparator, matches only, if the value of the configured `field` in the event is exactly the configured `value`. This comparator is case-sensitive. |
-| `gt`         | `Greater than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is greater than the configured `value`. This comparator never matches when the value is not a numeric field. |
-| `lt`         | `Less than` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `gt`         | `Greater than or equals` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is greater than or equals the configured `value`. This comparator never matches when the value is not a numeric field. |
+| `lt`         | `Less than or equals` comparator, matches only, if the value of the configured `field` in the event is a numeric value and is les than or equals the configured `value`. This comparator never matches when the value is not a numeric field. |
 | `contains`   | `Contains` comparator, matches only, if the value of the configured `field` in the event is a contains the configured `value`. This is a wildcard matcher, which is equivalent to `*value*` is wildcards would exist. |
 | `startsWith` | `Starts with` comparator, same as `contains` with the only difference, that the field value needs to start with the configured value (`value*` instead of `*value*`). |
 | `endsWith`   | `Ends with` comparator, same as `contains` with the only difference, that the field value needs to end with the configured value (`*value` instead of `*value*`). |
+
+## Virtual Fields
+
+In addition to the fields received via the webhook from CFTools, CFTools Relay may inject available data for the specific event in it's own fields.
+These fields are also called _virtual fields_ as they are only present and usable within CFTools Relay rule configuration.
+
+Virtual Fields aim to provide context information for an event within the stream of incoming webhook events.
+They allow to have filters match when, e.g., a specific threshold of events is reached, instead of relaying each and every webhook event.
+
+You can use each of the below listed virtual fields as the `field` name in any rule configuration.
+As virtual fields may be related to the time-series of events, you need to specify the timeframe for which the virtual field should be evaluated on.
+If you do not specify this value, a default of 1 hour is assumed.
+The time-frame is the amount of time and a unit, combined in a single string, e.g. "1h" for one hour or "30m" for 30 minutes.
+Available units can be found in [this documentation](https://pkg.go.dev/time#ParseDuration).
+
+Events are associated to the CFTools ID they are about and are only recognized for virtual fields of the same player.
+For events that may have multiple CFTools IDs (like `player.kill`, which has a victim and a murderer CFTools ID), the event is persisted for the CFTools ID, which matches the event the most (`player.kill` is an event of a kill, which is associated with the murderer).
+
+### Available Virtual Fields
+
+| Field name          | Explanation |
+|---------------------|-------------|
+| `vf_event_count`    | A simple counter. Counts every event with the same `type` (e.g. `player.kill` for the specified time-frame. |
+
+#### Example 1: Relay kill message only, when 5 kills of the same player within the last hour
+
+The following example will only relay the Webhook to Discord, if the murderer had 5 kills in the last hour (including the currently evaluated one):
+
+```json
+{
+  "event": "player.kill",
+  "rules": [
+    {
+      "comparator": "gt",
+      "field": "vf_event_count",
+      "value": 5,
+      "since": "1h"
+    }
+  ]
+}
+```
+
+#### Example 2: Relay 5th kill message only
+
+Based on the previous example, the set of rules in this example will _only_ relay the 5th kill message.
+Kill events that appear after that are ignored.
+
+```json
+{
+  "event": "player.kill",
+  "rules": [
+    {
+      "comparator": "gt",
+      "field": "vf_event_count",
+      "value": 5,
+      "since": "1h"
+    },
+    {
+      "comparator": "lt",
+      "field": "vf_event_count",
+      "value": 5,
+      "since": "1h"
+    }
+  ]
+}
+```
