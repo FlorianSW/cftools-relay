@@ -19,17 +19,21 @@ const (
 
 type FilterList []Filter
 
-func (l FilterList) Matches(h EventHistory, e Event) bool {
+func (l FilterList) Matches(h EventHistory, e Event) (bool, error) {
 	if len(l) == 0 {
-		return true
+		return true, nil
 	}
 
 	for _, filter := range l {
-		if filter.Matches(h, e) {
-			return true
+		m, err := filter.Matches(h, e)
+		if err != nil {
+			return false, err
+		}
+		if m {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }
 
 type Filter struct {
@@ -46,52 +50,52 @@ type Rule struct {
 	Since      string      `json:"since,omitempty"`
 }
 
-func (f Filter) Matches(h EventHistory, e Event) bool {
+func (f Filter) Matches(h EventHistory, e Event) (bool, error) {
 	if e.Type != f.Event {
-		return false
+		return false, nil
 	}
 	if len(f.Rules) == 0 {
-		return true
+		return true, nil
 	}
 	for _, rule := range f.Rules {
 		err := populateVirtualField(h, e, rule)
 		if err != nil {
-			return false
+			return false, err
 		}
 		v, ok := e.Values[rule.Field]
 		if !ok {
-			return false
+			return false, nil
 		}
 		switch rule.Comparator {
 		case ComparatorEquals:
 			if v != rule.Value {
-				return false
+				return false, nil
 			}
 		case ComparatorContains:
 			if !strings.Contains(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
-				return false
+				return false, nil
 			}
 		case ComparatorStartsWith:
 			if !strings.HasPrefix(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
-				return false
+				return false, nil
 			}
 		case ComparatorEndsWith:
 			if !strings.HasSuffix(stringutil.Itos(v), stringutil.Itos(rule.Value)) {
-				return false
+				return false, nil
 			}
 		case ComparatorGreaterThan:
 			if stringutil.Itof(v) < stringutil.Itof(rule.Value) {
-				return false
+				return false, nil
 			}
 		case ComparatorLessThan:
 			if stringutil.Itof(v) > stringutil.Itof(rule.Value) {
-				return false
+				return false, nil
 			}
 		default:
-			return false
+			return false, nil
 		}
 	}
-	return true
+	return true, nil
 }
 
 func populateVirtualField(h EventHistory, e Event, rule Rule) error {
