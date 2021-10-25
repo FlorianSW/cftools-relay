@@ -2,3 +2,4 @@ config.json
 cftools-relay.iml
 .idea/
 build/
+storage/

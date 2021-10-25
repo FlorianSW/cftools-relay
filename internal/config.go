@@ -11,10 +11,15 @@ type Discord struct {
 	WebhookUrl string `json:"webhook_url"`
 }
 
+type History struct {
+	StoragePath string `json:"storage_path"`
+}
+
 type Config struct {
 	Port    int               `json:"port"`
 	Secret  string            `json:"secret"`
 	Discord Discord           `json:"discord"`
+	History History           `json:"history"`
 	Filter  domain.FilterList `json:"filter"`
 }
 
@@ -26,6 +31,9 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 
 	if config.Filter == nil {
 		config.Filter = domain.FilterList{}
+	}
+	if config.History.StoragePath == "" {
+		config.History.StoragePath = "./storage"
 	}
 
 	return config, persistConfig(path, config)

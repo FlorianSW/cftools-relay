@@ -15,7 +15,9 @@ type repository struct {
 
 func NewEventRepository(dataDir string) (*repository, error) {
 	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		return nil, err
+		if err := os.Mkdir(dataDir, 0655); err != nil {
+			return nil, err
+		}
 	}
 	return &repository{
 		dataDir: dataDir,
