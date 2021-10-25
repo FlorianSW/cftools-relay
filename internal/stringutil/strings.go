@@ -26,6 +26,7 @@ func Itof(v interface{}) float32 {
 	case float32:
 		return value
 	case int:
+		return float32(value)
 	case float64:
 		return float32(value)
 	case string:

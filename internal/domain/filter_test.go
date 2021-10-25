@@ -8,19 +8,26 @@ import (
 )
 
 var _ = Describe("Filter", func() {
+	var history domain.EventHistory
+
 	someEvent := domain.Event{
 		Type:      domain.EventPlayerKill,
 		Timestamp: time.Now(),
 		Values: map[string]interface{}{
-			"someKey":   "someValue",
-			"numberKey": 100.12,
+			domain.FieldCfToolsId: "AN_ID",
+			"someKey":             "someValue",
+			"numberKey":           100.12,
 		},
 	}
+
+	BeforeEach(func() {
+		history = NewInMemoryEventHistoryRepository()
+	})
 
 	It("Matches any event when no filter defined", func() {
 		filters := domain.FilterList{}
 
-		Expect(filters.Matches(someEvent)).To(BeTrue())
+		Expect(filters.Matches(history, someEvent)).To(BeTrue())
 	})
 
 	Context("Event filter", func() {
@@ -30,7 +37,7 @@ var _ = Describe("Filter", func() {
 				Rules: nil,
 			}}
 
-			Expect(filters.Matches(someEvent)).To(BeTrue())
+			Expect(filters.Matches(history, someEvent)).To(BeTrue())
 		})
 
 		It("does not match event", func() {
@@ -39,7 +46,7 @@ var _ = Describe("Filter", func() {
 				Rules: nil,
 			}}
 
-			Expect(filters.Matches(someEvent)).To(BeFalse())
+			Expect(filters.Matches(history, someEvent)).To(BeFalse())
 		})
 	})
 
@@ -55,7 +62,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -68,7 +75,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 
 			It("all rules must match to match", func() {
@@ -85,7 +92,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 		Context("GT comparator", func() {
@@ -99,7 +106,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -112,7 +119,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 		Context("LT comparator", func() {
@@ -126,7 +133,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -139,7 +146,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 		Context("contains comparator", func() {
@@ -153,7 +160,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -166,7 +173,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 		Context("startsWith comparator", func() {
@@ -180,7 +187,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -193,7 +200,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 		Context("endsWith comparator", func() {
@@ -207,7 +214,7 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeTrue())
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
 			})
 
 			It("does not match event", func() {
@@ -220,8 +227,80 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(someEvent)).To(BeFalse())
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+			})
+		})
+	})
+
+	Context("virtual fields", func() {
+		Context("event_count", func() {
+			It("Matches when event_count is greater than", func() {
+				err := history.Save(domain.Event{
+					Type:      someEvent.Type,
+					Timestamp: time.Now().Add(-40 * time.Minute),
+					Values: map[string]interface{}{
+						domain.FieldCfToolsId: *someEvent.CFToolsId(),
+					},
+				})
+				Expect(err).ToNot(HaveOccurred())
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "gt",
+						Field:      domain.VirtualFieldEventCount,
+						Value:      1,
+						Since:      "1h",
+					}},
+				}}
+
+				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+			})
+			It("does not match when less than events", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "gt",
+						Field:      domain.VirtualFieldEventCount,
+						Value:      15,
+					}},
+				}}
+
+				Expect(filters.Matches(history, someEvent)).To(BeFalse())
 			})
 		})
 	})
 })
+
+type inMemoryRepository struct {
+	data map[string][]domain.Event
+}
+
+func NewInMemoryEventHistoryRepository() *inMemoryRepository {
+	return &inMemoryRepository{
+		data: map[string][]domain.Event{},
+	}
+}
+
+func (r inMemoryRepository) Save(e domain.Event) error {
+	r.data[*e.CFToolsId()] = append(r.data[*e.CFToolsId()], e)
+	return nil
+}
+
+func (r inMemoryRepository) FindWithin(eventType, cftoolsId string, within time.Duration) ([]domain.Event, error) {
+	d, ok := r.data[cftoolsId]
+	if !ok {
+		return []domain.Event{}, nil
+	}
+	res := []domain.Event{}
+	latest := time.Now().Add(-within)
+	for _, event := range d {
+		if event.Type != eventType {
+			continue
+		}
+		if event.Timestamp.Before(latest) {
+			continue
+		}
+		res = append(res, event)
+	}
+	return res, nil
+}

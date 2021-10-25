@@ -3,6 +3,7 @@ package domain
 import (
 	"cftools-relay/internal/stringutil"
 	"strings"
+	"time"
 )
 
 const (
@@ -12,17 +13,19 @@ const (
 	ComparatorContains    = "contains"
 	ComparatorStartsWith  = "startsWith"
 	ComparatorEndsWith    = "endsWith"
+
+	VirtualFieldEventCount = "vf_event_count"
 )
 
 type FilterList []Filter
 
-func (l FilterList) Matches(e Event) bool {
+func (l FilterList) Matches(h EventHistory, e Event) bool {
 	if len(l) == 0 {
 		return true
 	}
 
 	for _, filter := range l {
-		if filter.Matches(e) {
+		if filter.Matches(h, e) {
 			return true
 		}
 	}
@@ -40,9 +43,10 @@ type Rule struct {
 	Comparator string      `json:"comparator"`
 	Field      string      `json:"field"`
 	Value      interface{} `json:"value"`
+	Since      string      `json:"since,omitempty"`
 }
 
-func (f Filter) Matches(e Event) bool {
+func (f Filter) Matches(h EventHistory, e Event) bool {
 	if e.Type != f.Event {
 		return false
 	}
@@ -50,6 +54,10 @@ func (f Filter) Matches(e Event) bool {
 		return true
 	}
 	for _, rule := range f.Rules {
+		err := populateVirtualField(h, e, rule)
+		if err != nil {
+			return false
+		}
 		v, ok := e.Values[rule.Field]
 		if !ok {
 			return false
@@ -84,4 +92,25 @@ func (f Filter) Matches(e Event) bool {
 		}
 	}
 	return true
+}
+
+func populateVirtualField(h EventHistory, e Event, rule Rule) error {
+	if rule.Field == VirtualFieldEventCount {
+		var d time.Duration
+		if rule.Since != "" {
+			parsed, err := time.ParseDuration(rule.Since)
+			if err != nil {
+				return err
+			}
+			d = parsed
+		} else {
+			d = 1 * time.Hour
+		}
+		events, err := h.FindWithin(e.Type, *e.CFToolsId(), d)
+		if err != nil {
+			return err
+		}
+		e.Values[VirtualFieldEventCount] = len(events)
+	}
+	return nil
 }
