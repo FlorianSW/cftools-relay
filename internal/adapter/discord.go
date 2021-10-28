@@ -12,10 +12,6 @@ import (
 	"strconv"
 )
 
-const (
-	ColorDarkBlue = 2123412
-)
-
 type discordTarget struct {
 	webhookUrl string
 	logger     lager.Logger
@@ -28,12 +24,22 @@ func NewDiscordTarget(webhookUrl string, logger lager.Logger) *discordTarget {
 	}
 }
 
-func (t *discordTarget) Relay(e domain.Event) error {
+func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
 	l := t.logger.Session("relay", lager.Data{"event": e})
+	message := e.Message()
+	color := domain.ColorDarkBlue
+	if f != nil {
+		if f.Message != "" {
+			message = f.Message
+		}
+		if f.Color != "" {
+			color = f.Color.Int()
+		}
+	}
 	fields := []*discordgo.MessageEmbedField{
 		{
 			Name:   "Message",
-			Value:  e.Message(),
+			Value:  message,
 			Inline: false,
 		},
 	}
@@ -48,7 +54,7 @@ func (t *discordTarget) Relay(e domain.Event) error {
 		Username: "CFTools-Discord-Relay",
 		Embeds: []*discordgo.MessageEmbed{
 			{
-				Color: ColorDarkBlue,
+				Color: color,
 				Footer: &discordgo.MessageEmbedFooter{
 					Text: "CFTools Relay by FlorianSW",
 				},

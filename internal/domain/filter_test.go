@@ -25,20 +25,24 @@ var _ = Describe("Filter", func() {
 		history = NewInMemoryEventHistoryRepository()
 	})
 
-	It("Matches any event when no filter defined", func() {
+	It("MatchingFilter any event when no filter defined", func() {
 		filters := domain.FilterList{}
 
-		Expect(filters.Matches(history, someEvent)).To(BeTrue())
+		matches, filter, _ := filters.MatchingFilter(history, someEvent)
+		Expect(matches).To(BeTrue())
+		Expect(filter).To(BeNil())
 	})
 
 	Context("Event filter", func() {
-		It("Matches event", func() {
+		It("MatchingFilter event", func() {
 			filters := domain.FilterList{{
 				Event: someEvent.Type,
 				Rules: nil,
 			}}
 
-			Expect(filters.Matches(history, someEvent)).To(BeTrue())
+			matches, filter, _ := filters.MatchingFilter(history, someEvent)
+			Expect(matches).To(BeTrue())
+			Expect(*filter).To(Equal(filters[0]))
 		})
 
 		It("does not match event", func() {
@@ -47,13 +51,15 @@ var _ = Describe("Filter", func() {
 				Rules: nil,
 			}}
 
-			Expect(filters.Matches(history, someEvent)).To(BeFalse())
+			matches, filter, _ := filters.MatchingFilter(history, someEvent)
+			Expect(matches).To(BeFalse())
+			Expect(filter).To(BeNil())
 		})
 	})
 
 	Context("Event filter rules", func() {
 		Context("EQ comparator", func() {
-			It("Matches event", func() {
+			It("MatchingFilter event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -63,7 +69,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event", func() {
@@ -76,7 +84,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 
 			It("all rules must match to match", func() {
@@ -93,11 +103,13 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 		Context("GT comparator", func() {
-			It("Matches float event", func() {
+			It("MatchingFilter float event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -107,7 +119,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event (JSON Number)", func() {
@@ -120,7 +134,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 
 			It("does not match event", func() {
@@ -133,11 +149,13 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 		Context("LT comparator", func() {
-			It("Matches event", func() {
+			It("MatchingFilter event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -147,7 +165,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event", func() {
@@ -160,11 +180,13 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 		Context("contains comparator", func() {
-			It("Matches event", func() {
+			It("MatchingFilter event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -174,7 +196,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event", func() {
@@ -187,11 +211,13 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 		Context("startsWith comparator", func() {
-			It("Matches event", func() {
+			It("MatchingFilter event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -201,7 +227,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event", func() {
@@ -214,11 +242,13 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 		Context("endsWith comparator", func() {
-			It("Matches event", func() {
+			It("MatchingFilter event", func() {
 				filters := domain.FilterList{{
 					Event: someEvent.Type,
 					Rules: domain.RuleList{{
@@ -228,7 +258,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 
 			It("does not match event", func() {
@@ -241,14 +273,16 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 	})
 
 	Context("virtual fields", func() {
 		Context("event_count", func() {
-			It("Matches when event_count is greater than", func() {
+			It("MatchingFilter when event_count is greater than", func() {
 				err := history.Save(domain.Event{
 					Type:      someEvent.Type,
 					Timestamp: time.Now().Add(-40 * time.Minute),
@@ -267,7 +301,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeTrue())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
 			})
 			It("does not match when less than events", func() {
 				filters := domain.FilterList{{
@@ -279,7 +315,9 @@ var _ = Describe("Filter", func() {
 					}},
 				}}
 
-				Expect(filters.Matches(history, someEvent)).To(BeFalse())
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
 			})
 		})
 	})

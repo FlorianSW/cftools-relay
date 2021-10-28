@@ -65,12 +65,12 @@ func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
 	if err != nil {
 		return err
 	}
-	m, err := h.filter.Matches(h.history, e.Event)
+	m, f, err := h.filter.MatchingFilter(h.history, e.Event)
 	if err != nil {
 		return err
 	}
 	if m {
-		return h.target.Relay(e.Event)
+		return h.target.Relay(e.Event, f)
 	}
 	return nil
 }

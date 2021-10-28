@@ -255,3 +255,53 @@ Kill events that appear after that are ignored.
   ]
 }
 ```
+
+## Custom message & color
+
+When relaying a message to your discord, CFTools Relay uses a default message, which depends on the type of event.
+It also chooses a default color for the embedded message, which is currently dark blue.
+
+Optionally, you can define a custom message as well as a custom color for the message on a filter, which is used whenever the filter matches.
+Both options are optional and do not depend on each other.
+When defining a custom message for a filter, all the metadata of the message will still be relayed to your discord channel.
+
+### Example 1: Configure a custom message for a filter
+
+The following filter configuration will use `A custom message` when the first filter matches, and the default when the second matches.
+
+```json
+  "filter": [
+    {
+      "event": "user.join",
+      "rules": null,
+      "message": "A custom message"
+    },
+    {
+      "event": "user.leave",
+      "rules": null
+    }
+  ]
+```
+
+### Example 1: Configure a custom color for a filter
+
+The following filter configuration will use `A custom message` when the first filter matches, and the default when the second matches.
+
+```json
+  "filter": [
+    {
+      "event": "user.join",
+      "rules": null,
+      "color": "DARK_GREEN"
+    },
+    {
+      "event": "user.leave",
+      "rules": null
+    }
+  ]
+```
+
+### Supported color names
+
+You can choose from a pre-configured color palette.
+Supported color names can be found in the [source code](./blob/main/internal/domain/filter.go).
