@@ -304,4 +304,4 @@ The following filter configuration will use `A custom message` when the first fi
 ### Supported color names
 
 You can choose from a pre-configured color palette.
-Supported color names can be found in the [source code](./blob/main/internal/domain/filter.go).
+Supported color names can be found in the [source code](./internal/domain/filter.go).
