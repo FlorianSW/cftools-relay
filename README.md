@@ -206,6 +206,7 @@ Available units can be found in [this documentation](https://pkg.go.dev/time#Par
 
 Events are associated to the CFTools ID they are about and are only recognized for virtual fields of the same player.
 For events that may have multiple CFTools IDs (like `player.kill`, which has a victim and a murderer CFTools ID), the event is persisted for the CFTools ID, which matches the event the most (`player.kill` is an event of a kill, which is associated with the murderer).
+For each CFTools ID, a maximum of 100 events are preserved before the most historical events are truncated/removed.
 
 ### Available Virtual Fields
 

@@ -44,6 +44,9 @@ func (r repository) Save(e domain.Event) error {
 	}
 
 	record.Events = append(record.Events, e)
+	if len(record.Events) > 100 {
+		record.Events = record.Events[len(record.Events) - 100:]
+	}
 	c, err := json.Marshal(record)
 	if err != nil {
 		return err

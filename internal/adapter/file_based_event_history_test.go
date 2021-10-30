@@ -12,7 +12,7 @@ import (
 var _ = Describe("EventHistory", func() {
 	var (
 		tmpPath string
-		r domain.EventHistory
+		r       domain.EventHistory
 	)
 
 	BeforeEach(func() {
@@ -62,6 +62,19 @@ var _ = Describe("EventHistory", func() {
 		Expect(events[0].Timestamp).To(BeTemporally("==", e.Timestamp))
 		Expect(events[1].Type).To(Equal(domain.EventUserJoin))
 		Expect(events[1].Timestamp).To(BeTemporally("==", e3.Timestamp))
+	})
+
+	It("does not save more than 100 events per id", func() {
+		var e domain.Event
+		for i := 0; i < 101; i++ {
+			e = mustSave(r, makeEventWithType(domain.EventUserJoin))
+		}
+
+		events, err := r.FindWithin(domain.EventUserJoin, *e.CFToolsId(), 1*time.Hour)
+
+		Expect(err).ToNot(HaveOccurred())
+		Expect(events).To(HaveLen(100))
+		Expect(events[len(events)-1].Timestamp).To(BeTemporally("==", e.Timestamp))
 	})
 
 	It("returns events for specified timeframe only", func() {
