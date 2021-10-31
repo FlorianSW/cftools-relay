@@ -47,6 +47,10 @@ var possibleMetadata = map[string]string{
 	"item":                 "Item",
 }
 
+type Server struct {
+	Secret string `json:"secret"`
+}
+
 type EventFlavor = string
 
 type WebhookEvent struct {

@@ -4,6 +4,9 @@ import (
 	"cftools-relay/internal/domain"
 	"code.cloudfoundry.org/lager"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"net/url"
 	"os"
 )
 
@@ -17,7 +20,8 @@ type History struct {
 
 type Config struct {
 	Port    int               `json:"port"`
-	Secret  string            `json:"secret"`
+	Secret  string            `json:"secret,omitempty"`
+	Servers map[string]domain.Server `json:"servers"`
 	Discord Discord           `json:"discord"`
 	History History           `json:"history"`
 	Filter  domain.FilterList `json:"filter"`
@@ -34,6 +38,19 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 	}
 	if config.History.StoragePath == "" {
 		config.History.StoragePath = "./storage"
+	}
+	if len(config.Servers) != 0 && config.Secret != "" {
+		return config, errors.New("can not have a secret and servers configured at the same time")
+	}
+	if config.Secret != "" {
+		config.Servers = map[string]domain.Server{}
+		config.Servers[""] = domain.Server{Secret: config.Secret}
+		config.Secret = ""
+	}
+	for name, _ := range config.Servers {
+		if url.PathEscape(name) != name {
+			return config, fmt.Errorf("%s is expected to be URL-safe", name)
+		}
 	}
 
 	return config, persistConfig(path, config)

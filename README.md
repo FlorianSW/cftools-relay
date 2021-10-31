@@ -54,24 +54,27 @@ A setup like that is out-of-scope of this README.
 When you setup this tool the first time, you need to do some basic steps in order to create and verify the webhook in the CFTools Cloud console:
 
 1. Start the tool (if you did not do that already) and ensure it is able to receive web requests (see _Check port of the tool and your firewall_)
-2. Go to the CFTools Cloud Dashboard and open the server where the webhook should be added to
-3. Navigate to the Manage -> Integrations page of that server
-4. Add a new Webhook with the _New Webhook_ button
-5. Enter the Webhook URL:
+2. Open the `config.json` of CFTools Relay in your favourite text editor
+3. Create a new server entry in the `servers` object of the config and choose a name for the server (you can not use whitespaces or other characters that are not URL-safe). It should look like this (when your server name is `aServerName`):
+    - `"servers": {"aServerName": {"Secret": ""}},`
+4. Go to the CFTools Cloud Dashboard and open the server where the webhook should be added to
+5. Navigate to the Manage -> Integrations page of that server
+6. Add a new Webhook with the _New Webhook_ button
+7. Enter the Webhook URL:
    - It consists of the public IP address or domain of your server (e.g. http://123.123.123.123)
    - appended is the Port (by default 8080) separated by a colon (:8080)
-   - at the end it needs to have a fixed path: `/cftools-webhook`
-   - For the example values above, the full webhook URL looks like: `http://123.123.123.123:8080/cftools-webhook`
-6. Select `CFTools CLoud (Hephaistos v1)` as the _Payload format_
-7. Click _Deploy_
-8. Reload the page and make sure it shows a green shield (which means _Verified and active_) next to the newly created webhook
-9. Open the Webhook details and copy the value in the _Secret_ field
-10. Open the `config.json` of CFTools Relay in your favourite text editor
-11. Paste the copied secret into the value of the `secret` field inside the config. It should then look like this (when your secret is `abc123`):
-    - `"secret": "abc123",`
-12. Save the `config.json` file and restart the CFTools Relay tool
-13. Go back to the Webhook details page of CFTools Cloud and select every event you want the CFTools Relay to receive
-14. Hit _Save_
+   - at the end it needs to have a fixed path together with the server name: `/cftools-webhook/aServerName`
+   - For the example values above, the full webhook URL looks like: `http://123.123.123.123:8080/cftools-webhook/aServerName`
+8. Select `CFTools CLoud (Hephaistos v1)` as the _Payload format_
+9. Click _Deploy_
+10. Reload the page and make sure it shows a green shield (which means _Verified and active_) next to the newly created webhook
+11. Open the Webhook details and copy the value in the _Secret_ field
+12. Go back to the `config.json` of CFTools Relay in your text editor
+13. Paste the copied secret into the value of the `secret` field of your previously created server. It should then look like this (when your secret is `abc123`):
+    - `"servers": {"aServerName": "abc123"},`
+14. Save the `config.json` file and restart the CFTools Relay tool
+15. Go back to the Webhook details page of CFTools Cloud and select every event you want the CFTools Relay to receive
+16. Hit _Save_
 
 You're done with the configuration on the CFTools side.
 Given CFTools Relay does not know where to relay the webhook event messages to right now, you need to configure the Discord target:
@@ -91,6 +94,24 @@ Given CFTools Relay does not know where to relay the webhook event messages to r
 
 That's it.
 The first time configuration is now done and CFTools Relay will now start to forward Webhook events from CFTools Cloud to your discord channel.
+
+### Multiple server setup
+
+CFTools-relay supports multiple server out-of-the box.
+You can either run multiple instances of the tool (when you do not want to share the data of all servers in a shared data basis), or you can use one instance of CFTools-relay to serve webhooks of multiple CFTools servers.
+
+In order to serve multiple webhook events from multiple servers in a single CFTools-relay instance, you need to configure one server object within the `servers` object of the config and set the secret as explained in the previous chapter.
+An example of how such a setup looks like:
+```json
+  "servers": {
+    "firstServer": {
+      "secret": "the-secret"
+    },
+    "secondServer": {
+      "secret": "the-secret"
+    }
+  },
+```
 
 ### Filter configuration
 
