@@ -153,7 +153,7 @@ func (e Event) Metadata() Metadata {
 }
 
 func (e Event) CFToolsId() *string {
-	for _, f := range []string{FieldCfToolsId, FieldMurdererCfToolsId, FieldPlayerId} {
+	for _, f := range []string{FieldCfToolsId, FieldMurdererCfToolsId, FieldPlayerId, FieldVictimCfToolsId} {
 		possibleId, ok := e.Values[f]
 		if id, isString := possibleId.(string); ok && isString {
 			return &id

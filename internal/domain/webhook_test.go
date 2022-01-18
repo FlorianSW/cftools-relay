@@ -39,11 +39,38 @@ var _ = Describe("Event", func() {
 				Type:      EventPlayerPlace,
 				Timestamp: time.Now(),
 				Values: map[string]interface{}{
-					FieldPlayerId:   "AN_ID",
+					FieldPlayerId: "AN_ID",
 				},
 			}
 
 			Expect(*e.CFToolsId()).To(Equal("AN_ID"))
+		})
+
+		Context("victim_id", func() {
+			It("uses victim_id when no other values present", func() {
+				e := Event{
+					Type:      EventPlayerDeathStarvation,
+					Timestamp: time.Now(),
+					Values: map[string]interface{}{
+						FieldVictimCfToolsId: "AN_ID",
+					},
+				}
+
+				Expect(*e.CFToolsId()).To(Equal("AN_ID"))
+			})
+
+			It("ignores victim_id when murderer_id is present", func() {
+				e := Event{
+					Type:      EventPlayerKill,
+					Timestamp: time.Now(),
+					Values: map[string]interface{}{
+						FieldMurdererCfToolsId: "AN_ID",
+						FieldVictimCfToolsId:   "ANOTHER_ID",
+					},
+				}
+
+				Expect(*e.CFToolsId()).To(Equal("AN_ID"))
+			})
 		})
 
 		It("returns nil if no id present", func() {
