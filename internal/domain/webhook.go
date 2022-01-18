@@ -27,6 +27,7 @@ const (
 	EventPlayerDamage           = "player.damage"
 
 	FieldCfToolsId         = "cftools_id"
+	FieldPlayerId          = "player_id"
 	FieldVictimCfToolsId   = "victim_id"
 	FieldMurdererCfToolsId = "murderer_id"
 )
@@ -152,13 +153,11 @@ func (e Event) Metadata() Metadata {
 }
 
 func (e Event) CFToolsId() *string {
-	possibleId, ok := e.Values[FieldCfToolsId]
-	if id, isString := possibleId.(string); ok && isString {
-		return &id
-	}
-	possibleId, ok = e.Values[FieldMurdererCfToolsId]
-	if id, isString := possibleId.(string); ok && isString {
-		return &id
+	for _, f := range []string{FieldCfToolsId, FieldMurdererCfToolsId, FieldPlayerId} {
+		possibleId, ok := e.Values[f]
+		if id, isString := possibleId.(string); ok && isString {
+			return &id
+		}
 	}
 	return nil
 }

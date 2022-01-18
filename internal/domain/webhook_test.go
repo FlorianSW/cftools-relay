@@ -34,6 +34,18 @@ var _ = Describe("Event", func() {
 			Expect(*e.CFToolsId()).To(Equal("AN_ID"))
 		})
 
+		It("returns player ID", func() {
+			e := Event{
+				Type:      EventPlayerPlace,
+				Timestamp: time.Now(),
+				Values: map[string]interface{}{
+					FieldPlayerId:   "AN_ID",
+				},
+			}
+
+			Expect(*e.CFToolsId()).To(Equal("AN_ID"))
+		})
+
 		It("returns nil if no id present", func() {
 			e := Event{
 				Type:      EventUserJoin,
