@@ -198,6 +198,28 @@ Based on the previous example, you can also combine multiple rules and make filt
 }
 ```
 
+#### Example 3: Relay kill message when done with one of multiple weapons and over a specific distance
+
+This example filter configuration will relay a `player.kill` message only, if the murderer used an AKM or an M16-A2 and made the kill over 1000 meter away.
+
+```json
+{
+  "event": "player.kill",
+  "rules": [
+     {
+        "comparator": "gt",
+        "field": "distance",
+        "value": 100
+     },
+     {
+        "comparator": "oneOf",
+        "field": "weapon",
+        "value": ["KA-M", "M16-A2"]
+     }
+  ]
+}
+```
+
 #### Available Comparators
 
 The following table lists the available Comparators for filter rules:
@@ -210,6 +232,7 @@ The following table lists the available Comparators for filter rules:
 | `contains`   | `Contains` comparator, matches only, if the value of the configured `field` in the event is a contains the configured `value`. This is a wildcard matcher, which is equivalent to `*value*` is wildcards would exist. |
 | `startsWith` | `Starts with` comparator, same as `contains` with the only difference, that the field value needs to start with the configured value (`value*` instead of `*value*`). |
 | `endsWith`   | `Ends with` comparator, same as `contains` with the only difference, that the field value needs to end with the configured value (`*value` instead of `*value*`). |
+| `oneOf`      | `One of` comparator, matches when the value of the configured `field` in the event is included in the list of values configured in `value`. The `value` needs to be an array of strings. If a string is given only, this comparator behaves like `eq`. |
 
 ## Virtual Fields
 
@@ -305,7 +328,7 @@ The following filter configuration will use `A custom message` when the first fi
   ]
 ```
 
-### Example 1: Configure a custom color for a filter
+### Example 2: Configure a custom color for a filter
 
 The following filter configuration will use `A custom message` when the first filter matches, and the default when the second matches.
 

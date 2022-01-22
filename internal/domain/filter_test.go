@@ -278,6 +278,52 @@ var _ = Describe("Filter", func() {
 				Expect(filter).To(BeNil())
 			})
 		})
+		Context("oneOf comparator", func() {
+			It("MatchingFilter event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "oneOf",
+						Field:      "someKey",
+						Value:      []string{"anotherValue", "someValue"},
+					}},
+				}}
+
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
+			})
+
+			It("does not match event", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "oneOf",
+						Field:      "someKey",
+						Value:      []string{"anotherValue", "yetAnotherValue"},
+					}},
+				}}
+
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeFalse())
+				Expect(filter).To(BeNil())
+			})
+
+			It("behaves like eq when no array of strings given", func() {
+				filters := domain.FilterList{{
+					Event: someEvent.Type,
+					Rules: domain.RuleList{{
+						Comparator: "oneOf",
+						Field:      "someKey",
+						Value:      "someValue",
+					}},
+				}}
+
+				matches, filter, _ := filters.MatchingFilter(history, someEvent)
+				Expect(matches).To(BeTrue())
+				Expect(*filter).To(Equal(filters[0]))
+			})
+		})
 	})
 
 	Context("virtual fields", func() {

@@ -13,6 +13,7 @@ const (
 	ComparatorContains    = "contains"
 	ComparatorStartsWith  = "startsWith"
 	ComparatorEndsWith    = "endsWith"
+	ComparatorOneOf       = "oneOf"
 
 	VirtualFieldEventCount = "vf_event_count"
 
@@ -162,11 +163,29 @@ func (f Filter) Matches(h EventHistory, e Event) (bool, error) {
 			if stringutil.Itof(v) > stringutil.Itof(rule.Value) {
 				return false, nil
 			}
+		case ComparatorOneOf:
+			if !containsValue(v, rule.Value) {
+				return false, nil
+			}
 		default:
 			return false, nil
 		}
 	}
 	return true, nil
+}
+
+func containsValue(v interface{}, values interface{}) bool {
+	switch x := values.(type) {
+	case []string:
+		for _, i := range x {
+			if v == i {
+				return true
+			}
+		}
+	case string:
+		return v == x
+	}
+	return false
 }
 
 func populateVirtualField(h EventHistory, e Event, rule Rule) error {
