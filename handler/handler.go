@@ -4,31 +4,40 @@ import (
 	"cftools-relay/internal/domain"
 	"code.cloudfoundry.org/lager"
 	"errors"
+	"golang.org/x/sync/singleflight"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const cfToolsWebhookPrefix = "/cftools-webhook"
 
 type webhookHandler struct {
-	target  domain.Target
-	servers map[string]domain.Server
-	filter  domain.FilterList
-	history domain.EventHistory
-	logger  lager.Logger
+	target         domain.Target
+	servers        map[string]domain.Server
+	filter         domain.FilterList
+	history        domain.EventHistory
+	logger         lager.Logger
+	eventGroup     singleflight.Group
+	executedEvents map[string]time.Time
 }
 
 func NewWebhookHandler(t domain.Target, s map[string]domain.Server, filter domain.FilterList, h domain.EventHistory, logger lager.Logger) *webhookHandler {
-	return &webhookHandler{
-		target:  t,
-		servers: s,
-		filter:  filter,
-		history: h,
-		logger:  logger,
+	handler := &webhookHandler{
+		target:         t,
+		servers:        s,
+		filter:         filter,
+		history:        h,
+		logger:         logger,
+		executedEvents: map[string]time.Time{},
 	}
+
+	go handler.invalidator(1 * time.Minute)
+
+	return handler
 }
 
-func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l := h.logger.Session("serve", lager.Data{"url": r.URL.String()})
 	defer func() {
 		err := r.Body.Close()
@@ -62,13 +71,25 @@ func (h webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.onEvent(e); err != nil {
+	_, err, _ = h.eventGroup.Do(e.Id, func() (interface{}, error) {
+		if _, ok := h.executedEvents[e.Id]; ok {
+			l.Info("de-duplicated-event", lager.Data{"id": e.Id})
+			return nil, nil
+		}
+
+		err := h.onEvent(e)
+		h.executedEvents[e.Id] = time.Now()
+
+		return nil, err
+	})
+
+	if err != nil {
 		l.Error("handle-event", err)
 		w.WriteHeader(500)
 	}
 }
 
-func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
+func (h *webhookHandler) onEvent(e domain.WebhookEvent) error {
 	if err := h.history.Save(e.Event); err != nil {
 		return err
 	}
@@ -83,7 +104,7 @@ func (h webhookHandler) onEvent(e domain.WebhookEvent) error {
 	return nil
 }
 
-func (h webhookHandler) serverFromRequest(r *http.Request) (domain.Server, error) {
+func (h *webhookHandler) serverFromRequest(r *http.Request) (domain.Server, error) {
 	l := h.logger.Session("server-from-request", lager.Data{"url": r.URL.String()})
 
 	if !strings.HasPrefix(r.URL.String(), cfToolsWebhookPrefix) {
@@ -99,4 +120,31 @@ func (h webhookHandler) serverFromRequest(r *http.Request) (domain.Server, error
 		return domain.Server{}, errors.New("not a known server")
 	}
 	return s, nil
+}
+
+func (h *webhookHandler) invalidator(ttl time.Duration) {
+	t := time.NewTicker(ttl)
+	defer t.Stop()
+
+	for range t.C {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					h.logger.Error("invalidator-recover", nil, lager.Data{"panic": err})
+				}
+			}()
+
+			count := 0
+			expired := time.Now().Add(2 * time.Minute)
+			for k, v := range h.executedEvents {
+				if v.Before(expired) {
+					delete(h.executedEvents, k)
+					count++
+				}
+			}
+			if count != 0 {
+				h.logger.Info("expire-executed-events", lager.Data{"invalidated": count, "remaining": len(h.executedEvents)})
+			}
+		}()
+	}
 }

@@ -61,6 +61,9 @@ golang.org/x/crypto/salsa20/salsa
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
+# golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
+## explicit
+golang.org/x/sync/singleflight
 # golang.org/x/sys v0.0.0-20210423082822-04245dca01da
 ## explicit; go 1.12
 golang.org/x/sys/cpu
