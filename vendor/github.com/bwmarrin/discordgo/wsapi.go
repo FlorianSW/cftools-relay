@@ -33,7 +33,7 @@ var ErrWSAlreadyOpen = errors.New("web socket already opened")
 var ErrWSNotFound = errors.New("no websocket connection exists")
 
 // ErrWSShardBounds is thrown when you try to use a shard ID that is
-// less than the total shard count
+// more than the total shard count
 var ErrWSShardBounds = errors.New("ShardID must be less than ShardCount")
 
 type resumePacket struct {
@@ -383,6 +383,17 @@ func (s *Session) UpdateListeningStatus(name string) (err error) {
 
 // UpdateStatusComplex allows for sending the raw status update data untouched by discordgo.
 func (s *Session) UpdateStatusComplex(usd UpdateStatusData) (err error) {
+	// The comment does say "untouched by discordgo", but we might need to lie a bit here.
+	// The Discord documentation lists `activities` as being nullable, but in practice this
+	// doesn't seem to be the case. I had filed an issue about this at
+	// https://github.com/discord/discord-api-docs/issues/2559, but as of writing this
+	// haven't had any movement on it, so at this point I'm assuming this is an error,
+	// and am fixing this bug accordingly. Because sending `null` for `activities` instantly
+	// disconnects us, I think that disallowing it from being sent in `UpdateStatusComplex`
+	// isn't that big of an issue.
+	if usd.Activities == nil {
+		usd.Activities = make([]*Activity, 0)
+	}
 
 	s.RLock()
 	defer s.RUnlock()
@@ -398,10 +409,13 @@ func (s *Session) UpdateStatusComplex(usd UpdateStatusData) (err error) {
 }
 
 type requestGuildMembersData struct {
-	GuildIDs  []string `json:"guild_id"`
-	Query     string   `json:"query"`
-	Limit     int      `json:"limit"`
-	Presences bool     `json:"presences"`
+	// TODO: Deprecated. Use string instead of []string
+	GuildIDs  []string  `json:"guild_id"`
+	Query     *string   `json:"query,omitempty"`
+	UserIDs   *[]string `json:"user_ids,omitempty"`
+	Limit     int       `json:"limit"`
+	Nonce     string    `json:"nonce,omitempty"`
+	Presences bool      `json:"presences"`
 }
 
 type requestGuildMembersOp struct {
@@ -414,16 +428,21 @@ type requestGuildMembersOp struct {
 // guildID   : Single Guild ID to request members of
 // query     : String that username starts with, leave empty to return all members
 // limit     : Max number of items to return, or 0 to request all members matched
+// nonce     : Nonce to identify the Guild Members Chunk response
 // presences : Whether to request presences of guild members
-func (s *Session) RequestGuildMembers(guildID string, query string, limit int, presences bool) (err error) {
-	data := requestGuildMembersData{
-		GuildIDs:  []string{guildID},
-		Query:     query,
-		Limit:     limit,
-		Presences: presences,
-	}
-	err = s.requestGuildMembers(data)
-	return
+func (s *Session) RequestGuildMembers(guildID, query string, limit int, nonce string, presences bool) error {
+	return s.RequestGuildMembersBatch([]string{guildID}, query, limit, nonce, presences)
+}
+
+// RequestGuildMembersList requests guild members from the gateway
+// The gateway responds with GuildMembersChunk events
+// guildID   : Single Guild ID to request members of
+// userIDs   : IDs of users to fetch
+// limit     : Max number of items to return, or 0 to request all members matched
+// nonce     : Nonce to identify the Guild Members Chunk response
+// presences : Whether to request presences of guild members
+func (s *Session) RequestGuildMembersList(guildID string, userIDs []string, limit int, nonce string, presences bool) error {
+	return s.RequestGuildMembersBatchList([]string{guildID}, userIDs, limit, nonce, presences)
 }
 
 // RequestGuildMembersBatch requests guild members from the gateway
@@ -431,12 +450,37 @@ func (s *Session) RequestGuildMembers(guildID string, query string, limit int, p
 // guildID   : Slice of guild IDs to request members of
 // query     : String that username starts with, leave empty to return all members
 // limit     : Max number of items to return, or 0 to request all members matched
+// nonce     : Nonce to identify the Guild Members Chunk response
 // presences : Whether to request presences of guild members
-func (s *Session) RequestGuildMembersBatch(guildIDs []string, query string, limit int, presences bool) (err error) {
+//
+// NOTE: this function is deprecated, please use RequestGuildMembers instead
+func (s *Session) RequestGuildMembersBatch(guildIDs []string, query string, limit int, nonce string, presences bool) (err error) {
 	data := requestGuildMembersData{
 		GuildIDs:  guildIDs,
-		Query:     query,
+		Query:     &query,
 		Limit:     limit,
+		Nonce:     nonce,
+		Presences: presences,
+	}
+	err = s.requestGuildMembers(data)
+	return
+}
+
+// RequestGuildMembersBatchList requests guild members from the gateway
+// The gateway responds with GuildMembersChunk events
+// guildID   : Slice of guild IDs to request members of
+// userIDs   : IDs of users to fetch
+// limit     : Max number of items to return, or 0 to request all members matched
+// nonce     : Nonce to identify the Guild Members Chunk response
+// presences : Whether to request presences of guild members
+//
+// NOTE: this function is deprecated, please use RequestGuildMembersList instead
+func (s *Session) RequestGuildMembersBatchList(guildIDs []string, userIDs []string, limit int, nonce string, presences bool) (err error) {
+	data := requestGuildMembersData{
+		GuildIDs:  guildIDs,
+		UserIDs:   &userIDs,
+		Limit:     limit,
+		Nonce:     nonce,
 		Presences: presences,
 	}
 	err = s.requestGuildMembers(data)
@@ -755,13 +799,13 @@ func (s *Session) identify() error {
 	s.log(LogDebug, "called")
 
 	// TODO: This is a temporary block of code to help
-	// maintain backwards compatability
+	// maintain backwards compatibility
 	if s.Compress == false {
 		s.Identify.Compress = false
 	}
 
 	// TODO: This is a temporary block of code to help
-	// maintain backwards compatability
+	// maintain backwards compatibility
 	if s.Token != "" && s.Identify.Token == "" {
 		s.Identify.Token = s.Token
 	}
