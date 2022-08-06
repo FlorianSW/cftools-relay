@@ -25,6 +25,7 @@ const (
 	EventPlayerDeathEnvironment = "player.death_environment"
 	EventPlayerKill             = "player.kill"
 	EventPlayerDamage           = "player.damage"
+	EventUserChat               = "user.chat"
 
 	FieldCfToolsId         = "cftools_id"
 	FieldPlayerId          = "player_id"
@@ -46,6 +47,8 @@ var possibleMetadata = map[string]string{
 	"damage":               "Damage points",
 	"distance":             "Distance in meter",
 	"item":                 "Item",
+	"channel":              "Channel",
+	"message":              "Message",
 }
 
 type Server struct {
@@ -133,6 +136,8 @@ func (e Event) Message() string {
 		return "Player injured another player."
 	case EventPlayerPlace:
 		return "Player played an item."
+	case EventUserChat:
+		return "Player wrote a message."
 	default:
 		return fmt.Sprintf("Event: %s", e.Type)
 	}
