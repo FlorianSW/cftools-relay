@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"text/template"
 )
 
 type discordTarget struct {
@@ -24,16 +25,22 @@ func NewDiscordTarget(webhookUrl string, logger lager.Logger) *discordTarget {
 	}
 }
 
-func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
-	l := t.logger.Session("relay", lager.Data{"event": e})
+func formatType(f *domain.Filter) domain.FormatType {
+	if f == nil || f.Format == nil {
+		return domain.FormatTypeRich
+	}
+	return f.Format.Type
+}
+
+func richFormatParams(e domain.Event, f *domain.Filter, p *discordgo.WebhookParams) error {
 	message := e.Message()
 	color := domain.ColorDarkBlue
-	if f != nil {
-		if f.Message != "" {
-			message = f.Message
+	if f != nil && f.Format != nil && f.Format.Parameters != nil {
+		if m, ok := f.Format.Parameters["message"]; ok && m != "" {
+			message = m.(string)
 		}
-		if f.Color != "" {
-			color = f.Color.Int()
+		if c, ok := f.Format.Parameters["color"]; ok {
+			color = domain.Color(c.(string)).Int()
 		}
 	}
 	fields := []*discordgo.MessageEmbedField{
@@ -50,21 +57,63 @@ func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
 			Inline: true,
 		})
 	}
+	p.Embeds = []*discordgo.MessageEmbed{
+		{
+			Color: color,
+			Footer: &discordgo.MessageEmbedFooter{
+				Text: "CFTools Relay by FlorianSW",
+			},
+			Provider: &discordgo.MessageEmbedProvider{
+				URL:  "https://github.com",
+				Name: "CFTools Relay",
+			},
+			Fields: fields,
+		},
+	}
+	return nil
+}
+
+func textFormatParams(e domain.Event, f *domain.Filter, p *discordgo.WebhookParams) error {
+	t := ""
+	if f != nil && f.Format != nil && f.Format.Parameters != nil {
+		if tpl, ok := f.Format.Parameters["template"]; ok {
+			t = tpl.(string)
+		}
+	}
+	if t == "" {
+		for k, _ := range e.Values {
+			t += " {{." + k + "}}"
+		}
+	}
+	tpl, err := template.New("").Parse(t)
+	if err != nil {
+		p.Content = "Error in text template: " + err.Error()
+		return err
+	}
+	var content bytes.Buffer
+	err = tpl.Execute(&content, e.Values)
+	if err != nil {
+		return err
+	}
+	p.Content = content.String()
+	return nil
+}
+
+func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
+	l := t.logger.Session("relay", lager.Data{"event": e})
 	params := discordgo.WebhookParams{
 		Username: "CFTools-Discord-Relay",
-		Embeds: []*discordgo.MessageEmbed{
-			{
-				Color: color,
-				Footer: &discordgo.MessageEmbedFooter{
-					Text: "CFTools Relay by FlorianSW",
-				},
-				Provider: &discordgo.MessageEmbedProvider{
-					URL:  "https://github.com",
-					Name: "CFTools Relay",
-				},
-				Fields: fields,
-			},
-		},
+	}
+
+	var err error
+	switch formatType(f) {
+	case domain.FormatTypeRich:
+		err = richFormatParams(e, f, &params)
+	case domain.FormatTypeText:
+		err = textFormatParams(e, f, &params)
+	}
+	if err != nil {
+		return err
 	}
 
 	body, err := json.Marshal(params)
@@ -83,14 +132,14 @@ func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
 			return
 		}
 	}()
-	if res.StatusCode >= 200 || res.StatusCode <= 299 {
+	if res.StatusCode >= 200 && res.StatusCode <= 299 {
 		return nil
 	}
-	err = errors.New("expected status code 2xx, got " + strconv.Itoa(res.StatusCode))
+	httpErr := errors.New("expected status code 2xx, got " + strconv.Itoa(res.StatusCode))
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	l.Error("discord", err, lager.Data{"body": resBody})
+	l.Error("discord", httpErr, lager.Data{"body": resBody})
 	return err
 }

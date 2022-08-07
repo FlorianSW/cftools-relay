@@ -45,6 +45,9 @@ const (
 	ColorNotQuiteBlack   = 2303786
 	ColorFuschia         = 15418782
 	ColorBlack           = 2303786
+
+	FormatTypeRich = FormatType("rich")
+	FormatTypeText = FormatType("text")
 )
 
 var colorMapping = map[string]int{
@@ -109,8 +112,16 @@ func (c Color) Int() int {
 type Filter struct {
 	Event   string   `json:"event"`
 	Rules   RuleList `json:"rules"`
+	Format  *Format  `json:"format,omitempty"`
 	Message string   `json:"message,omitempty"`
 	Color   Color    `json:"color,omitempty"`
+}
+
+type FormatType string
+
+type Format struct {
+	Type       FormatType             `json:"type,omitempty"`
+	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
 type RuleList []Rule

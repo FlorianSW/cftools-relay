@@ -310,6 +310,11 @@ Optionally, you can define a custom message as well as a custom color for the me
 Both options are optional and do not depend on each other.
 When defining a custom message for a filter, all the metadata of the message will still be relayed to your discord channel.
 
+Color and message is only available when using the `rich` format type, which is the default.
+If you choose the `text` format type, the message will be relayed with as a simple text message.
+You may define your own template, which gives you the possibility to define what fields are forwarded in the message and in what format.
+See the below examples for more information about that.
+
 ### Example 1: Configure a custom message for a filter
 
 The following filter configuration will use `A custom message` when the first filter matches, and the default when the second matches.
@@ -319,7 +324,12 @@ The following filter configuration will use `A custom message` when the first fi
     {
       "event": "user.join",
       "rules": null,
-      "message": "A custom message"
+      "format": {
+        "type": "rich",
+        "parameters": {
+          "message": "A custom message"
+        }
+      }
     },
     {
       "event": "user.leave",
@@ -330,14 +340,44 @@ The following filter configuration will use `A custom message` when the first fi
 
 ### Example 2: Configure a custom color for a filter
 
-The following filter configuration will use `A custom message` when the first filter matches, and the default when the second matches.
+The following filter configuration will use dark green as an embed color when the first filter matches, and the default when the second matches.
 
 ```json
   "filter": [
     {
       "event": "user.join",
       "rules": null,
-      "color": "DARK_GREEN"
+      "format": {
+         "type": "rich",
+         "parameters": {
+           "color": "DARK_GREEN"
+         }
+      }
+    },
+    {
+      "event": "user.leave",
+      "rules": null
+    }
+  ]
+```
+
+### Example 3: Using the `text` format for `user.chat` events
+
+The following filter will use the `text` format type to forward `user.chat` events in a more readable way.
+The template can access all fields of the event the filter should match on (see the `payloads/` directory for some example events and their available fields).
+For more information about the template syntax, refer to the go `text/template` [package documentation](https://pkg.go.dev/text/template).
+
+```json
+  "filter": [
+    {
+      "event": "user.chat",
+      "rules": null,
+      "format": {
+         "type": "text",
+         "parameters": {
+           "template": "[**{{.channel}}**] *{{.player_name}}*: {{.message}}"
+         }
+      }
     },
     {
       "event": "user.leave",

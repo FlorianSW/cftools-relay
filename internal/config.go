@@ -19,12 +19,12 @@ type History struct {
 }
 
 type Config struct {
-	Port    int               `json:"port"`
-	Secret  string            `json:"secret,omitempty"`
+	Port    int                      `json:"port"`
+	Secret  string                   `json:"secret,omitempty"`
 	Servers map[string]domain.Server `json:"servers"`
-	Discord Discord           `json:"discord"`
-	History History           `json:"history"`
-	Filter  domain.FilterList `json:"filter"`
+	Discord Discord                  `json:"discord"`
+	History History                  `json:"history"`
+	Filter  domain.FilterList        `json:"filter"`
 }
 
 func NewConfig(path string, logger lager.Logger) (Config, error) {
@@ -35,6 +35,20 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 
 	if config.Filter == nil {
 		config.Filter = domain.FilterList{}
+	} else {
+		for i, filter := range config.Filter {
+			if (filter.Color != "" || filter.Message != "") && filter.Format.Type == "" {
+				config.Filter[i].Format = &domain.Format{
+					Type: domain.FormatTypeRich,
+					Parameters: map[string]interface{}{
+						"color":   filter.Color,
+						"message": filter.Message,
+					},
+				}
+				config.Filter[i].Color = ""
+				config.Filter[i].Message = ""
+			}
+		}
 	}
 	if config.History.StoragePath == "" {
 		config.History.StoragePath = "./storage"
