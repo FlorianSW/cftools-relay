@@ -74,7 +74,7 @@ func (h *webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err, _ = h.eventGroup.Do(e.Id, func() (interface{}, error) {
 		if _, ok := h.executedEvents[e.Id]; ok {
 			l.Info("de-duplicated-event", lager.Data{"id": e.Id})
-			//return nil, nil
+			return nil, nil
 		}
 
 		err := h.onEvent(e)
