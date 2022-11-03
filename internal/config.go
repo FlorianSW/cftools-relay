@@ -37,7 +37,7 @@ func NewConfig(path string, logger lager.Logger) (Config, error) {
 		config.Filter = domain.FilterList{}
 	} else {
 		for i, filter := range config.Filter {
-			if (filter.Color != "" || filter.Message != "") && filter.Format.Type == "" {
+			if (filter.Color != "" || filter.Message != "") && (filter.Format == nil || filter.Format.Type == "") {
 				config.Filter[i].Format = &domain.Format{
 					Type: domain.FormatTypeRich,
 					Parameters: map[string]interface{}{
