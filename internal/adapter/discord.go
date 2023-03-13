@@ -102,7 +102,7 @@ func textFormatParams(e domain.Event, f *domain.Filter, p *discordgo.WebhookPara
 func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
 	l := t.logger.Session("relay", lager.Data{"event": e})
 	params := discordgo.WebhookParams{
-		Username: "CFTools-Relay",
+		Username: f.SendingUsername(),
 	}
 
 	var err error

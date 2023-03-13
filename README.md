@@ -386,6 +386,27 @@ For more information about the template syntax, refer to the go `text/template` 
   ]
 ```
 
+## Custom username
+
+When relaying messages to Discord, cftools-relay uses a default username (`CFTools-Relay`).
+If you want to use a different name instead, you can specify one individually in your filter using the `username` parameter.
+
+### Example 1: Using different usernames for different filters
+
+```json
+  "filter": [
+    {
+      "event": "user.chat",
+      "rules": null,
+      "username": "SomeOtherUsername"
+    },
+    {
+      "event": "user.leave",
+      "rules": null
+    }
+  ]
+```
+
 ### Supported color names
 
 You can choose from a pre-configured color palette.

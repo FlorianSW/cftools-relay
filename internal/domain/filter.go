@@ -110,11 +110,12 @@ func (c Color) Int() int {
 }
 
 type Filter struct {
-	Event   string   `json:"event"`
-	Rules   RuleList `json:"rules"`
-	Format  *Format  `json:"format,omitempty"`
-	Message string   `json:"message,omitempty"`
-	Color   Color    `json:"color,omitempty"`
+	Event    string   `json:"event"`
+	Rules    RuleList `json:"rules"`
+	Format   *Format  `json:"format,omitempty"`
+	Message  string   `json:"message,omitempty"`
+	Color    Color    `json:"color,omitempty"`
+	Username *string  `json:"username,omitempty"`
 }
 
 type FormatType string
@@ -183,6 +184,13 @@ func (f Filter) Matches(h EventHistory, e Event) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+func (f Filter) SendingUsername() string {
+	if f.Username == nil {
+		return "CFTools-Relay"
+	}
+	return *f.Username
 }
 
 func containsValue(v interface{}, values interface{}) bool {
