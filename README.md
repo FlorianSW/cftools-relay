@@ -105,7 +105,8 @@ An example of how such a setup looks like:
 ```json
   "servers": {
     "firstServer": {
-      "secret": "the-secret"
+      "secret": "the-secret",
+      "name": "A custom ServerName"
     },
     "secondServer": {
       "secret": "the-secret"

@@ -57,19 +57,18 @@ func richFormatParams(e domain.Event, f *domain.Filter, p *discordgo.WebhookPara
 			Inline: true,
 		})
 	}
-	p.Embeds = []*discordgo.MessageEmbed{
-		{
-			Color: color,
-			Footer: &discordgo.MessageEmbedFooter{
-				Text: "CFTools Relay by FlorianSW",
-			},
-			Provider: &discordgo.MessageEmbedProvider{
-				URL:  "https://github.com",
-				Name: "CFTools Relay",
-			},
-			Fields: fields,
-		},
+	if len(p.Embeds) == 0 {
+		p.Embeds = []*discordgo.MessageEmbed{}
 	}
+	p.Embeds[0].Color = color
+	p.Embeds[0].Footer = &discordgo.MessageEmbedFooter{
+		Text: "CFTools Relay by FlorianSW",
+	}
+	p.Embeds[0].Provider = &discordgo.MessageEmbedProvider{
+		URL:  "https://github.com/FlorianSW/cftools-relay",
+		Name: "CFTools Relay",
+	}
+	p.Embeds[0].Fields = fields
 	return nil
 }
 
@@ -99,10 +98,20 @@ func textFormatParams(e domain.Event, f *domain.Filter, p *discordgo.WebhookPara
 	return nil
 }
 
-func (t *discordTarget) Relay(e domain.Event, f *domain.Filter) error {
+func (t *discordTarget) Relay(e domain.Event, f *domain.Filter, serverName *string) error {
 	l := t.logger.Session("relay", lager.Data{"event": e})
+
 	params := discordgo.WebhookParams{
 		Username: f.SendingUsername(),
+	}
+	if serverName != nil {
+		params.Embeds = []*discordgo.MessageEmbed{
+			{
+				Author: &discordgo.MessageEmbedAuthor{
+					Name: *serverName,
+				},
+			},
+		}
 	}
 
 	var err error

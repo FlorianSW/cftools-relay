@@ -77,7 +77,7 @@ func (h *webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return nil, nil
 		}
 
-		err := h.onEvent(e)
+		err := h.onEvent(e, s.Name)
 		h.executedEvents[e.Id] = time.Now()
 
 		return nil, err
@@ -89,7 +89,7 @@ func (h *webhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *webhookHandler) onEvent(e domain.WebhookEvent) error {
+func (h *webhookHandler) onEvent(e domain.WebhookEvent, serverName *string) error {
 	if err := h.history.Save(e.Event); err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (h *webhookHandler) onEvent(e domain.WebhookEvent) error {
 		return err
 	}
 	if m {
-		return h.target.Relay(e.Event, f)
+		return h.target.Relay(e.Event, f, serverName)
 	}
 	return nil
 }

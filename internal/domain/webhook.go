@@ -52,7 +52,8 @@ var possibleMetadata = map[string]string{
 }
 
 type Server struct {
-	Secret string `json:"secret"`
+	Secret string  `json:"secret"`
+	Name   *string `json:"name,omitempty"`
 }
 
 type EventFlavor = string
