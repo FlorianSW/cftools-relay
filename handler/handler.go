@@ -94,12 +94,19 @@ func (h *webhookHandler) onEvent(e domain.WebhookEvent, serverName *string) erro
 		return err
 	}
 
-	m, f, err := h.filter.MatchingFilter(h.history, e.Event)
+	m, f, err := h.filter.MatchingFilters(h.history, e.Event)
 	if err != nil {
 		return err
 	}
-	if m {
-		return h.target.Relay(e.Event, f, serverName)
+	if m && len(f) == 0 {
+		return h.target.Relay(e.Event, nil, serverName)
+	} else if m {
+		for _, filter := range f {
+			err = h.target.Relay(e.Event, &filter, serverName)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

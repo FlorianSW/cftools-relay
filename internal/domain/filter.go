@@ -82,21 +82,22 @@ var colorMapping = map[string]int{
 
 type FilterList []Filter
 
-func (l FilterList) MatchingFilter(h EventHistory, e Event) (bool, *Filter, error) {
+func (l FilterList) MatchingFilters(h EventHistory, e Event) (bool, []Filter, error) {
+	var result []Filter
 	if len(l) == 0 {
-		return true, nil, nil
+		return true, result, nil
 	}
 
 	for _, filter := range l {
 		m, err := filter.Matches(h, e)
 		if err != nil {
-			return false, nil, err
+			return false, result, err
 		}
 		if m {
-			return true, &filter, nil
+			result = append(result, filter)
 		}
 	}
-	return false, nil, nil
+	return len(result) != 0, result, nil
 }
 
 type Color string
