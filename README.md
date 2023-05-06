@@ -124,8 +124,9 @@ There are two main concepts to understand before using filters:
 **Filters:**
 You can have 0-n filters configured in CFTools Relay.
 Filters are evaluated independently of each other.
-If at least one filter matches a specific webhook event received from CFTools Cloud, this event will be relayed to Discord.
-That means, filters are combined with an OR operator.
+CFTools-Relay will go through each filter one-by-one to match the event against.
+Each matching filter will be processed, which means that the filters are combined with an OR operator.
+Because of that, if you define multiple filters which would match a single event, the event may be relayed multiple times as well.
 The only required field for filters is the event name this filter should apply to.
 
 **Rules:**
